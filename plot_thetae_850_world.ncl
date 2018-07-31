@@ -7,7 +7,7 @@ wkstype="png"
 wkstype@wkWidth = 1100
 wkstype@wkHeight = 1100
 
-fils = systemfunc ("ls /scratch/local1/m300382/icon_globe/*.nc") ; file paths
+fils = systemfunc ("ls /scratch/local1/m300382/icon_globe/ICON_*_3h.nc") ; file paths
 f_pres    = addfiles (fils, "r")  
 ListSetType (f_pres, "cat")
 

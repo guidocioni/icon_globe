@@ -1,10 +1,15 @@
 load "$NCARG_ROOT/lib/ncarg/nclscripts/contrib/time_axis_labels.ncl"
 
 ; These variables are provided outside when the script is called 
-; lat_point=51.800556
-; lon_point=10.6172222
-; file_in="/scratch/local1/m300382/icon_globe/ICON_*.nc"
-; city="Brocken"
+if .not.isvar("lat_point") then
+	lat_point=51.800556
+end if
+if .not.isvar("lon_point") then
+	lon_point=10.6172222
+end if
+if .not.isvar("city") then
+	city="Brocken"
+end if
 
 ;***********************************************
 begin
@@ -12,7 +17,7 @@ begin
 
 fils = systemfunc ("ls "+file_in) ; file paths
 f_in    = addfiles (fils, "r")  
-ListSetType (f_in, "cat")
+;ListSetType (f_in, "cat")
 
 orography=addfile("~/icon_globe/ICON_iko_invar_package_world_grid.nc", "r")
 height=orography->h(0,:)
@@ -22,6 +27,7 @@ RAD2DEG = get_r2d("float")
 lon = f_in[:]->clon * RAD2DEG 
 lat = f_in[:]->clat * RAD2DEG
 time= f_in[:]->time 
+lev = f_in[:]->plev
 
 run_time=str_sub_str(time@units,"minutes since ","")
 run_string="Run: "+run_time
@@ -33,31 +39,104 @@ diff_squared=sqrt(diff_lon^2+diff_lat^2)
 ind_point=minind(diff_squared)
 ;
 
-u=f_in[:]->u(:,:,ind_point) 
-v=f_in[:]->v(:,:,ind_point)  
-temp=f_in[:]->t(:,:,ind_point) 
+dims_3D=(/dimsizes(time),dimsizes(lev)/)
+dims_2D=(/dimsizes(time)/)
+;
+; Add variables but first check whether they exist or not, otherwise create
+; array with missing value in order not to screw up the whole script
+;
+if isfilevar(f_in[0], "u") then
+	u=f_in[:]->u(:,:,ind_point)
+else 
+	u=new(dims_3D, float)
+end if
+;
+if isfilevar(f_in[0], "v") then
+	v=f_in[:]->v(:,:,ind_point)
+else 
+	v=new(dims_3D, float)
+end if
+;
+if isfilevar(f_in[0], "t") then
+	temp=f_in[:]->t(:,:,ind_point)
+else 
+	temp=new(dims_3D, float)
+end if
 temp=temp-273.15
-rh=f_in[:]->r(:,:,ind_point) 
+;
+if isfilevar(f_in[0], "r") then
+	rh=f_in[:]->r(:,:,ind_point)
+else 
+	rh=new(dims_3D, float)
+end if
 
+; Convert pressure levels to hPa
 u&plev=u&plev/100.
 v&plev=v&plev/100.
 temp&plev=temp&plev/100.
 rh&plev=rh&plev/100.
 
-mslp_point=f_in[:]->prmsl(:,ind_point) 
+; Subset 2-D variables and check whether they exist or not
+if isfilevar(f_in[0], "prmsl") then
+        mslp_point=f_in[:]->prmsl(:,ind_point)
+else
+        mslp_point=new(dims_2D, float)
+end if
 mslp_point=mslp_point/100.
-t2m_point=f_in[:]->2t(:,0,ind_point) 
+;
+if isfilevar(f_in[0], "2t") then
+        t2m_point=f_in[:]->2t(:,0,ind_point)
+else
+        t2m_point=new(dims_2D, float)
+end if
 t2m_point=t2m_point-273.15
-dewp_point=f_in[:]->2d(:,0,ind_point)
+;
+if isfilevar(f_in[0], "2d") then
+        dewp_point=f_in[:]->2d(:,0,ind_point)
+else
+        dewp_point=new(dims_2D, float)
+end if
 dewp_point=dewp_point-273.15
-gust_point=f_in[:]->10fg3(:,0,ind_point) 
+;
+if isfilevar(f_in[0], "10fg3") then
+        gust_point=f_in[:]->10fg3(:,0,ind_point)
+else
+        gust_point=new(dims_2D, float)
+end if
 gust_point=gust_point*3.6
-height_point=height(ind_point)
 
-snow_acc=f_in[:]->SNOW_CON(:,ind_point) + f_in[:]->SNOW_GSP(:,ind_point)
-copy_VarMeta(f_in[:]->SNOW_CON, snow_acc)
-rain_acc=f_in[:]->RAIN_CON(:,ind_point) + f_in[:]->RAIN_GSP(:,ind_point)
-copy_VarMeta(f_in[:]->RAIN_CON, rain_acc)
+height_point=height(ind_point)
+;;;;;;;;;;;;;;;;;;;;;;;;;
+; Precipitation variables 
+;;;;;;;;;;;;;;;;;;;;;;;;;
+if isfilevar(f_in[0], "SNOW_CON") then
+        snow_con=f_in[:]->SNOW_CON(:,ind_point)
+else
+        snow_con=new(dims_2D, float)
+end if
+;
+if isfilevar(f_in[0], "SNOW_GSP") then
+        snow_gsp=f_in[:]->SNOW_GSP(:,ind_point)
+else
+        snow_gsp=new(dims_2D, float)
+end if
+;
+if isfilevar(f_in[0], "RAIN_CON") then
+        rain_con=f_in[:]->RAIN_CON(:,ind_point)
+else
+        rain_con=new(dims_2D, float)
+end if
+;
+if isfilevar(f_in[0], "RAIN_GSP") then
+        rain_gsp=f_in[:]->RAIN_GSP(:,ind_point)
+else
+        rain_gsp=new(dims_2D, float)
+end if
+
+snow_acc=snow_con + snow_gsp
+copy_VarMeta(snow_con, snow_acc)
+rain_acc=rain_con + rain_gsp
+copy_VarMeta(rain_con, rain_acc)
 rain_point=rain_acc
 rain_point=rain_point*0.
 snow_point=snow_acc
@@ -74,7 +153,7 @@ end do
 rain_point=rain_point/3.
 snow_point=snow_point/3.
 
-; Select the data at the point 
+; Reorder arrays
 temp_point=temp(plev|:,time|:)
 u_point=u(plev|:,time|:)
 v_point=v(plev|:,time|:)
@@ -104,7 +183,7 @@ tt_res@cnFillPalette ="NCV_jet"
 tt_res@cnFillOn                 = True             ; turns on color fill
 tt_res@cnLevelSelectionMode     = "ManualLevels"   ; set levels manually
 tt_res@cnMinLevelValF           = -50.
-tt_res@cnMaxLevelValF           = 10.
+tt_res@cnMaxLevelValF           = 25.
 tt_res@cnLevelSpacingF          = 2.5
 ; tt_res@cnLinesOn                = False
 tt_res@cnLineThicknessF = 0.005
@@ -201,6 +280,7 @@ t2_res@tiYAxisString   = "2m T/T~B~D~N~ [C]"        ; set y-axis string
 t2_res@tiYAxisSide  = "Right"
 t2_res@tmXBLabelFontHeightF = 0.0005
 t2_res@tmXBLabelAngleF = 90
+t2_res@tmXBLabelDeltaF = 2.
 t2_res@tmYMajorGrid = True 
 t2_res@tmYMajorGridThicknessF = 0.4
 
@@ -242,7 +322,7 @@ description=gsn_add_annotation(windlayer, text, amres)
 ; Set special resources for the time axis
 resTick                = True
 resTick@ttmFormat      = "%d %c %H"
-resTick@ttmMajorStride = 2
+resTick@ttmMajorStride = 4
 ; Set resources necessary to customize Y axis labels
 time_axis_labels( time,  t2_res, resTick )
 

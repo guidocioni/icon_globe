@@ -3,7 +3,7 @@ load "$NCARG_ROOT/lib/ncarg/nclscripts/contrib/cd_string.ncl"
 begin
 ; Open model level output file
 
-fils = systemfunc ("ls /scratch/local1/m300382/icon_globe/ICON_*") ; file paths
+fils = systemfunc ("ls /scratch/local1/m300382/icon_globe/ICON_*_3h.nc") ; file paths
 f_pres    = addfiles (fils, "r")  
 ListSetType (f_pres, "cat")
 

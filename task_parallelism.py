@@ -8,7 +8,7 @@ MAX_CONCURRENT =  4
 
 def launchTask(script):
 #    print "Launching: ", script
-    task = subprocess.Popen("ncl " + script, shell=True, executable="/bin/bash") 
+    task = subprocess.Popen("ncl -Q " + script, shell=True, executable="/bin/bash") 
     return task
  
 # ------------------------- main -----------------------------------------------

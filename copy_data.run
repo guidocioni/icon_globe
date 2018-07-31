@@ -34,15 +34,14 @@ cd /scratch/local1/m300382/icon_globe/
 
 # remove here the file so it remains until next time to be used
 rm *.nc
-# cp /home/mpim/m300382/icon_globe/grid.cdo ./
 cp /home/mpim/m300382/icon_globe/*.ncl ./
 cp /home/mpim/m300382/icon_globe/*.py ./
 
-#2-D variables
+# 2-D variables
 export TASK_PYTHON_ICON_GLOBE="download_merge_2d_variable_icon_globe"
 ${python} task_parallelism_general.py PMSL CLCT TOT_PREC VMAX_10M RAIN_CON RAIN_GSP SNOW_CON SNOW_GSP T_2M TD_2M WW CAPE_CON
 
-#3-D variables on pressure levels
+# 3-D variables on pressure levels
 export TASK_PYTHON_ICON_GLOBE="download_merge_3d_variable_icon_globe"
 ${python} task_parallelism_general.py T FI RELHUM U V
 
@@ -50,18 +49,17 @@ ${cdo} merge -setgrid,/home/mpim/m300382/icon_globe/icon_grid_0026_R03B07_G.nc I
 # plotting hourly data takes too much time, the following interpolation takes approx 1 min
 ${cdo} inttime,${year}-${month}-${day},${run}:00:00,3hour ICON_${year}${month}${day}${run}.nc ICON_${year}${month}${day}${run}_3h.nc
 rm ICON_iko_*
-rm ICON_${year}${month}${day}${run}.nc 
+#rm ICON_${year}${month}${day}${run}.nc 
 
-##optional remapping
+# optional remapping
 # ${cdo} -O -r remapnn,grid.cdo ICON_${year}${month}${day}${run}.nc ICON_${year}${month}${day}${run}_remap.nc
 # rm ICON_${year}${month}${day}${run}.nc
 
 #NCL plots
 
 #Meteograms
-ncl lat_point=53.55 lon_point=9.99 'file_in="/scratch/local1/m300382/icon_globe/ICON_*.nc"' 'city="Hamburg"' plot_meteogram.ncl
-ncl lat_point=41.8084 lon_point=-72.2495 'file_in="/scratch/local1/m300382/icon_globe/ICON_*.nc"' 'city="Storrs"' plot_meteogram.ncl
-ncl lat_point=51.800556 lon_point=10.6172222 'file_in="/scratch/local1/m300382/icon_globe/ICON_*_de.nc"' 'city="Brocken"' plot_meteogram.ncl
+ncl -Q lat_point=53.55 lon_point=9.99 file_in=\"/scratch/local1/m300382/icon_globe/ICON_$year$month$day$run.nc\" 'city="Hamburg"' plot_meteogram.ncl
+ncl -Q lat_point=41.8084 lon_point=-72.2495 file_in=\"/scratch/local1/m300382/icon_globe/ICON_$year$month$day$run.nc\" 'city="Storrs"' plot_meteogram.ncl
 
 ncftpput -R -v altervista icon_globe/meteograms meteogram_*
 #
@@ -97,7 +95,7 @@ ncftpput -R -v altervista icon_world/winds_jet world/winds_jet_*
 # for f in *.png; do NEW=${f%.png}_${year}${month}${day}${run}.png; mv ${f} "${NEW}"; done
 
 ####
-scp ICON_${year}${month}${day}${run}_3h.nc m300382@mistral.dkrz.de:/scratch/m/m300382/
+#scp ICON_${year}${month}${day}${run}_3h.nc m300382@mistral.dkrz.de:/scratch/m/m300382/
 ####
 
 # #Remove images locally
