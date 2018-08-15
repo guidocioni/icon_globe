@@ -150,8 +150,8 @@ end do
 
 ;rain_point=mask(rain_point, rain_point.le.0.01, 0)
 ;snow_point=mask(snow_point, snow_point.le.0.01, 0)
-rain_point=rain_point/3.
-snow_point=snow_point/3.
+; rain_point=rain_point/3.
+; snow_point=snow_point/3.
 
 ; Reorder arrays
 temp_point=temp(plev|:,time|:)
@@ -298,7 +298,7 @@ wind_res@tmYMajorGridThicknessF = 0.4
 wind_res@tmYMajorGridLineColor = "red"
 
 slp_res@xyLineColor      = "black"        ; set line color
-slp_res@tiYAxisString   = "MSLP/wind gust [km/h]"        ; set y-axis string
+slp_res@tiYAxisString   = "MSLP/ winds [km/h]"        ; set y-axis string
 slp_res@tiYAxisSide  = "Right"
 slp_res@tiYAxisOffsetXF = 0.05
 
@@ -329,7 +329,6 @@ time_axis_labels( time,  t2_res, resTick )
 rain_snow_plot  = gsn_csm_xy(wks,time,(/rain_point, snow_point/),res_xy)
 mslp_wind_plot  = gsn_csm_xy2(wks, time, mslp_point, gust_point, slp_res, wind_res)
 
-;obtain average of the plot 
 
 t2_plot         = gsn_csm_xy(wks,time,(/t2m_point,dewp_point/),t2_res)
 
