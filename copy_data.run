@@ -45,10 +45,10 @@ ${python} task_parallelism_general.py PMSL CLCT TOT_PREC VMAX_10M RAIN_CON RAIN_
 export TASK_PYTHON_ICON_GLOBE="download_merge_3d_variable_icon_globe"
 ${python} task_parallelism_general.py T FI RELHUM U V
 
-${cdo} merge -setgrid,/home/mpim/m300382/icon_globe/icon_grid_0026_R03B07_G.nc ICON_iko_* ICON_${year}${month}${day}${run}.nc
+${cdo} merge -setgrid,/home/mpim/m300382/icon_globe/icon_grid_0026_R03B07_G.nc icon_global_* ICON_${year}${month}${day}${run}.nc
 # plotting hourly data takes too much time, the following interpolation takes approx 1 min
 ${cdo} inttime,${year}-${month}-${day},${run}:00:00,3hour ICON_${year}${month}${day}${run}.nc ICON_${year}${month}${day}${run}_3h.nc
-rm ICON_iko_*
+rm icon_global_*
 #rm ICON_${year}${month}${day}${run}.nc 
 
 # optional remapping
