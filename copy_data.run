@@ -1,12 +1,21 @@
 #!/bin/bash
+
+##### LOAD functions to download model data
 . ~/functions_download_dwd.sh
+########################################### 
 
-
+##### LOAD environmental variables ########
 export NCARG_ROOT=/sw/jessie-x64/ncl-6.4.0-nodap-precompiled 
 export PATH=$NCARG_ROOT/bin:$PATH 
 export cdo=/sw/jessie-x64/cdo-1.8.0-gccsys/bin/cdo
-export python=/sw/jessie-x64/python/python-2.7-ve6-gccsys/bin/python
+export python=/home/mpim/m300382/.conda/envs/my_base/bin/python
+export parallel=/client/bin/parallel
+########################################### 
 
+export QT_QPA_PLATFORM=offscreen # Needed to avoid errors when using Python without display
+source /sw/jessie-x64/anaconda2-4.1.1/bin/activate my_base
+
+##### COMPUTE the date variables to determine the run
 export year=`date +"%Y"`
 export month=`date +"%m"`
 export day=`date +"%d"`
@@ -29,6 +38,7 @@ then
 fi
 
 export run
+########################################### 
 
 cd /scratch/local1/m300382/icon_globe/
 
@@ -37,45 +47,55 @@ rm *.nc
 cp /home/mpim/m300382/icon_globe/*.ncl ./
 cp /home/mpim/m300382/icon_globe/*.py ./
 
+##### DOWNLOAD model data #################
 # 2-D variables
-export TASK_PYTHON_ICON_GLOBE="download_merge_2d_variable_icon_globe"
-${python} task_parallelism_general.py PMSL CLCT TOT_PREC VMAX_10M RAIN_CON RAIN_GSP SNOW_CON SNOW_GSP T_2M TD_2M WW CAPE_CON
+# export TASK_PYTHON_ICON_GLOBE="download_merge_2d_variable_icon_globe"
+# ${python} task_parallelism_general.py PMSL CLCT TOT_PREC VMAX_10M RAIN_CON RAIN_GSP SNOW_CON SNOW_GSP T_2M TD_2M WW CAPE_CON
+### New version
+variables=("PMSL" "CLCT" "TOT_PREC" "VMAX_10M" "RAIN_CON" "RAIN_GSP" "SNOW_CON" "SNOW_GSP" "T_2M" "TD_2M" "WW" "CAPE_CON")
+${parallel} -j 16 download_merge_2d_variable_icon_globe ::: "${variables[@]}"
 
 # 3-D variables on pressure levels
-export TASK_PYTHON_ICON_GLOBE="download_merge_3d_variable_icon_globe"
-${python} task_parallelism_general.py T FI RELHUM U V
+# export TASK_PYTHON_ICON_GLOBE="download_merge_3d_variable_icon_globe"
+# ${python} task_parallelism_general.py T FI RELHUM U V
+### New version
+variables=("T" "FI" "RELHUM" "U" "V")
+${parallel} -j 16 download_merge_3d_variable_icon_globe ::: "${variables[@]}"
+###########################################
 
+##### PROCESS model data #################
 ${cdo} merge -setgrid,/home/mpim/m300382/icon_globe/icon_grid_0026_R03B07_G.nc icon_global_* ICON_${year}${month}${day}${run}.nc
 # plotting hourly data takes too much time, the following interpolation takes approx 1 min
-${cdo} inttime,${year}-${month}-${day},${run}:00:00,3hour ICON_${year}${month}${day}${run}.nc ICON_${year}${month}${day}${run}_3h.nc
+${cdo} select,hour=0,3,6,9,12,15,18,21 ICON_${year}${month}${day}${run}.nc ICON_${year}${month}${day}${run}_3h.nc
 rm icon_global_*
 #rm ICON_${year}${month}${day}${run}.nc 
 
 # optional remapping
 # ${cdo} -O -r remapnn,grid.cdo ICON_${year}${month}${day}${run}.nc ICON_${year}${month}${day}${run}_remap.nc
 # rm ICON_${year}${month}${day}${run}.nc
+###########################################
 
-#NCL plots
-
+##### PLOTS results ######################
 #Meteograms
 ncl -Q lat_point=53.55 lon_point=9.99 file_in=\"/scratch/local1/m300382/icon_globe/ICON_$year$month$day$run.nc\" 'city="Hamburg"' plot_meteogram.ncl
 ncl -Q lat_point=41.8084 lon_point=-72.2495 file_in=\"/scratch/local1/m300382/icon_globe/ICON_$year$month$day$run.nc\" 'city="Storrs"' plot_meteogram.ncl
 
 ncftpput -R -v altervista icon_globe/meteograms meteogram_*
 #
+# Parallelize the plotting script using GNU Parallel
+scripts=("plot_jetstream.py" "plot_rain_acc.py" "plot_clouds.py" "plot_geop_500.py" "plot_mslp_wind.py" "plot_thetae.py")
+projections=("world" "nh" "us")
 
-# Euro-Atlantic
-${python} task_parallelism.py plot_thetae_850.ncl plot_geop_500.ncl plot_mslp_wind.ncl plot_clouds.ncl plot_jetstream.ncl plot_rain_acc.ncl
+${parallel} -j 16 ${python} ::: "${scripts[@]}" ::: "${projections[@]}"
+###########################################
 
+##### UPLOAD figures to FTP server ########
 ncftpput -R -v altervista icon_globe/thetae_850 thetae_850_*
 ncftpput -R -v altervista icon_globe/gph_500 gph_500_*
 ncftpput -R -v altervista icon_globe/winds10m winds10m_*
 ncftpput -R -v altervista icon_globe/precip_clouds precip_clouds_*
 ncftpput -R -v altervista icon_globe/winds_jet winds_jet_*
 ncftpput -R -v altervista icon_globe/precip_acc precip_acc_*
-
-# US
-${python} task_parallelism.py plot_thetae_850_us.ncl plot_geop_500_us.ncl plot_clouds_us.ncl plot_rain_acc_us.ncl plot_mslp_wind_us.ncl plot_jetstream_us.ncl
 
 ncftpput -R -v altervista icon_us/thetae_850 us/thetae_850_*
 ncftpput -R -v altervista icon_us/gph_500 us/gph_500_*
@@ -84,15 +104,13 @@ ncftpput -R -v altervista icon_us/precip_acc us/precip_acc_*
 ncftpput -R -v altervista icon_us/winds_jet us/winds_jet_*
 ncftpput -R -v altervista icon_us/winds10m us/winds10m_*
 
-# World
-${python} task_parallelism.py plot_thetae_850_world.ncl plot_clouds_world.ncl plot_jetstream_world.ncl
-
-for f in world/*.png; do convert -trim +repage ${f} ${f}; done
 ncftpput -R -v altervista icon_world/thetae_850 world/thetae_850_*
 ncftpput -R -v altervista icon_world/precip_clouds world/precip_clouds_*
 ncftpput -R -v altervista icon_world/winds_jet world/winds_jet_*
-
-# for f in *.png; do NEW=${f%.png}_${year}${month}${day}${run}.png; mv ${f} "${NEW}"; done
+ncftpput -R -v altervista icon_world/winds10m world/winds10m_*
+ncftpput -R -v altervista icon_world/precip_acc world/precip_acc_*
+ncftpput -R -v altervista icon_world/gph_500 world/gph_500_*
+###########################################
 
 ####
 #scp ICON_${year}${month}${day}${run}_3h.nc m300382@mistral.dkrz.de:/scratch/m/m300382/

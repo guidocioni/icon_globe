@@ -4,8 +4,8 @@ begin
 ; Open model level output file
 
 wkstype="png"
-wkstype@wkWidth = 1100
-wkstype@wkHeight = 1100
+wkstype@wkWidth = 1500
+wkstype@wkHeight = 1500
 
 fils = systemfunc ("ls /scratch/local1/m300382/icon_globe/ICON_*_3h.nc") ; file paths
 f_pres    = addfiles (fils, "r")  
@@ -100,7 +100,7 @@ ResC@gsnRightString = "Copyright DWD"
 txres                       = True
 txres@txPerimOn             = True
 txres@txBackgroundFillColor = "White"
-txres@txFontHeightF         = 0.01
+txres@txFontHeightF         = 0.007
 amres=True 
 amres@amParallelPosF   = -0.5    
 amres@amOrthogonalPosF = -0.5    
