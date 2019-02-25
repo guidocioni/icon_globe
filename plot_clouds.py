@@ -35,6 +35,7 @@ def main():
     file = glob(input_file)
     print('Using file '+file[0])
     dset = xr.open_dataset(file[0])
+    dset = dset.metpy.parse_cf()
 
     # Compute rain and snow 
     rain_acc = dset['RAIN_CON'] + dset['RAIN_GSP']

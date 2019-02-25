@@ -36,11 +36,12 @@ def main():
     file = glob(input_file)
     print('Using file '+file[0])
     dset = xr.open_dataset(file[0])
+    dset = dset.metpy.parse_cf()
 
     # Select 850 hPa level using metpy
-    dset_850hpa = dset.metpy.sel(plev=850 * units.hPa)
-    theta_e = mpcalc.equivalent_potential_temperature(850 * units.hPa, dset_850hpa['t'],
-                     mpcalc.dewpoint_rh(dset_850hpa['t'], dset_850hpa['r']/100.)).to(units.degC)
+    dset_850hpa = dset
+    theta_e = mpcalc.equivalent_potential_temperature(850 * units.hPa, dset['t'].metpy.sel(vertical=850 * units.hPa),
+                     mpcalc.dewpoint_rh(dset['t'].metpy.sel(vertical=850 * units.hPa), dset['r'].metpy.sel(vertical=850 * units.hPa)/100.)).to(units.degC)
 
     mslp = dset['prmsl'].metpy.unit_array.to('hPa')
     lon, lat = get_coordinates(dset)

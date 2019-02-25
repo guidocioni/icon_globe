@@ -2,6 +2,7 @@
 
 ##### LOAD functions to download model data
 . ~/functions_download_dwd.sh
+export SHELL=$(type -p bash)
 ########################################### 
 
 ##### LOAD environmental variables ########
@@ -49,16 +50,10 @@ cp /home/mpim/m300382/icon_globe/*.py ./
 
 ##### DOWNLOAD model data #################
 # 2-D variables
-# export TASK_PYTHON_ICON_GLOBE="download_merge_2d_variable_icon_globe"
-# ${python} task_parallelism_general.py PMSL CLCT TOT_PREC VMAX_10M RAIN_CON RAIN_GSP SNOW_CON SNOW_GSP T_2M TD_2M WW CAPE_CON
-### New version
 variables=("PMSL" "CLCT" "TOT_PREC" "VMAX_10M" "RAIN_CON" "RAIN_GSP" "SNOW_CON" "SNOW_GSP" "T_2M" "TD_2M" "WW" "CAPE_CON")
 ${parallel} -j 16 download_merge_2d_variable_icon_globe ::: "${variables[@]}"
 
 # 3-D variables on pressure levels
-# export TASK_PYTHON_ICON_GLOBE="download_merge_3d_variable_icon_globe"
-# ${python} task_parallelism_general.py T FI RELHUM U V
-### New version
 variables=("T" "FI" "RELHUM" "U" "V")
 ${parallel} -j 16 download_merge_3d_variable_icon_globe ::: "${variables[@]}"
 ###########################################

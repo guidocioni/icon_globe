@@ -35,6 +35,7 @@ def main():
     file = glob(input_file)
     print('Using file '+file[0])
     dset = xr.open_dataset(file[0])
+    dset = dset.metpy.parse_cf()
 
     # Select 850 hPa level using metpy
     winds_10m = dset['10fg3'].squeeze().metpy.unit_array.to('kph')
@@ -48,7 +49,7 @@ def main():
     levels_winds_10m = np.arange(20., 150., 5.)
     levels_mslp = np.arange(mslp.min().astype("int"), mslp.max().astype("int"), 7.)
 
-    cmap = get_colormap("winds", n_colors=len(levels_winds_10m))
+    cmap = get_colormap("winds")
 
     for projection in projections:# This works regardless if projections is either single value or array
         fig = plt.figure(figsize=(figsize_x, figsize_y))

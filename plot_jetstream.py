@@ -35,11 +35,12 @@ def main():
     file = glob(input_file)
     print(sys.argv[0]+': Using file '+file[0])
     dset = xr.open_dataset(file[0])
+    dset = dset.metpy.parse_cf()
 
     # Select 850 hPa level using metpy
-    wind_300 = mpcalc.wind_speed(dset.metpy.sel(plev=300 * units.hPa)['u'],
-                             dset.metpy.sel(plev=300 * units.hPa)['v']).to(units.kph)
-    gph_300 = mpcalc.geopotential_to_height(dset.metpy.sel(plev=300 * units.hPa)['z'])
+    wind_300 = mpcalc.wind_speed(dset['u'].metpy.sel(vertical=300 * units.hPa),
+                             dset['v'].metpy.sel(vertical=300 * units.hPa)).to(units.kph)
+    gph_300 = mpcalc.geopotential_to_height(dset['z'].metpy.sel(vertical=300 * units.hPa))
 
     lon, lat = get_coordinates(dset)
 

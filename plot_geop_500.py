@@ -35,10 +35,11 @@ def main():
     file = glob(input_file)
     print('Using file '+file[0])
     dset = xr.open_dataset(file[0])
+    dset = dset.metpy.parse_cf()
 
     # Select 850 hPa level using metpy
-    temp_850 = dset.metpy.sel(plev=850 * units.hPa)['t'].metpy.unit_array.to('degC')
-    gph_500 = mpcalc.geopotential_to_height(dset.metpy.sel(plev=500 * units.hPa)['z'])
+    temp_850 = dset['t'].metpy.sel(vertical=850 * units.hPa).metpy.unit_array.to('degC')
+    gph_500 = mpcalc.geopotential_to_height(dset['z'].metpy.sel(vertical=500 * units.hPa))
 
     lon, lat = get_coordinates(dset)
 

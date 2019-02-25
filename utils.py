@@ -4,6 +4,7 @@ from matplotlib.offsetbox import AnchoredText
 import matplotlib.colors as colors
 import metpy.calc as mpcalc
 from metpy.units import units
+import pandas as pd
 
 folder = '/scratch/local1/m300382/icon_globe/'
 input_file=folder+'ICON_*_3h.nc' # 3 hourly
@@ -91,28 +92,14 @@ def truncate_colormap(cmap, minval=0.0, maxval=1.0, n=256):
         cmap(np.linspace(minval, maxval, n)))
     return new_cmap
 
-def get_colormap(cmap_type, n_colors=64):
+def get_colormap(cmap_type):
     """Create a custom colormap."""
     if cmap_type == "winds":
-        colors_tuple = np.array([[1.        , 1.        , 1.        , 1.        ],
-                                 [0.9372549 , 0.96078431, 0.81960784, 1.        ],
-                                 [0.90980392, 0.95686275, 0.62745098, 1.        ],
-                                 [0.6627451 , 0.80784314, 0.39607843, 1.        ],
-                                 [0.88627451, 0.92941176, 0.09019608, 1.        ],
-                                 [0.99607843, 0.92941176, 0.00392157, 1.        ],
-                                 [1.        , 0.92941176, 0.50588235, 1.        ],
-                                 [0.95686275, 0.81960784, 0.49803922, 1.        ],
-                                 [0.9254902 , 0.65098039, 0.27843137, 1.        ],
-                                 [0.90196078, 0.55294118, 0.23921569, 1.        ],
-                                 [0.85882353, 0.48627451, 0.21960784, 1.        ],
-                                 [0.94509804, 0.02352941, 0.24313725, 1.        ],
-                                 [0.91372549, 0.33333333, 0.63921569, 1.        ],
-                                 [0.60392157, 0.43921569, 0.65882353, 1.        ],
-                                 [0.39215686, 0.43921569, 0.97254902, 1.        ],
-                                 [0.49803922, 0.58823529, 0.99607843, 1.        ],
-                                 [0.55686275, 0.69803922, 1.        , 1.        ]])
+      colors_tuple = pd.read_csv('cmap_winds.rgba').values 
+    elif cmap_type == "temp":
+      colors_tuple = pd.read_csv('cmap_temp.rgba').values
          
-    cmap = colors.LinearSegmentedColormap.from_list(cmap_type, colors_tuple, n_colors)
+    cmap = colors.LinearSegmentedColormap.from_list(cmap_type, colors_tuple, colors_tuple.shape[0])
     return(cmap)
 
 def remove_collections(elements):

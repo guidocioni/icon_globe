@@ -35,6 +35,7 @@ def main():
     file = glob(input_file)
     print('Using file '+file[0])
     dset = xr.open_dataset(file[0])
+    dset = dset.metpy.parse_cf()
 
     # Select 850 hPa level using metpy
     precip_acc = dset['tp']
