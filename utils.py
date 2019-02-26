@@ -95,9 +95,9 @@ def truncate_colormap(cmap, minval=0.0, maxval=1.0, n=256):
 def get_colormap(cmap_type):
     """Create a custom colormap."""
     if cmap_type == "winds":
-      colors_tuple = pd.read_csv('cmap_winds.rgba').values 
+      colors_tuple = pd.read_csv('/home/mpim/m300382/icon_globe/cmap_winds.rgba').values 
     elif cmap_type == "temp":
-      colors_tuple = pd.read_csv('cmap_temp.rgba').values
+      colors_tuple = pd.read_csv('/home/mpim/m300382/icon_globe/cmap_temp.rgba').values
          
     cmap = colors.LinearSegmentedColormap.from_list(cmap_type, colors_tuple, colors_tuple.shape[0])
     return(cmap)
