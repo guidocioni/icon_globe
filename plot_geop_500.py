@@ -48,6 +48,8 @@ def main():
 
     levels_temp = np.arange(-30., 30., 1.)
     levels_gph = np.arange(4800., 5800., 70.)
+
+    cmap = get_colormap("temp")
     
     for projection in projections:# This works regardless if projections is either single value or array
         fig = plt.figure(figsize=(figsize_x, figsize_y))
@@ -61,7 +63,7 @@ def main():
 
         # All the arguments that need to be passed to the plotting function
         args=dict(m=m, x=x, y=y, ax=ax,
-                 temp_850=temp_850, gph_500=gph_500, mask=mask, levels_temp=levels_temp,
+                 temp_850=temp_850, gph_500=gph_500, mask=mask, levels_temp=levels_temp, cmap=cmap,
                  levels_gph=levels_gph, time=time, projection=projection, cum_hour=cum_hour)
         
         print('Pre-processing finished, launching plotting scripts')
@@ -81,24 +83,25 @@ def plot_files(dates, **args):
         # Find index in the original array to subset when plotting
         i = np.argmin(np.abs(date - args['time'])) 
         # Build the name of the output image
-        filename = subfolder_images[args['projection']]+'/'+variable_name+'_%s.png' % args['cum_hour'][i]#date.strftime('%Y%m%d%H')#
+        if not debug:
+            filename = subfolder_images[args['projection']]+'/'+variable_name+'_%s.png' % args['cum_hour'][i]#date.strftime('%Y%m%d%H')#
         # Test if the image already exists, although this behaviour should be removed in the future
         # since we always want to overwrite old files.
         # if os.path.isfile(filename):
         #     print('Skipping '+str(filename))
         #     continue 
 
-        cs = args['ax'].tricontourf(args['x'], args['y'], args['temp_850'][i, args['mask']], extend='both', cmap='jet',
+        cs = args['ax'].tricontourf(args['x'], args['y'], args['temp_850'][i, args['mask']], extend='both', cmap=args['cmap'],
                                     levels=args['levels_temp'])
 
         # Unfortunately m.contour with tri = True doesn't work because of a bug 
         c = args['ax'].tricontour(args['x'], args['y'], args['gph_500'][i,args['mask']], levels=args['levels_gph'],
-                             colors='white', linewidths=0.5)
+                             colors='white', linewidths=1.)
 
         labels = args['ax'].clabel(c, c.levels, inline=True, fmt='%4.0f' , fontsize=5)
-        annotation(args['ax'],'Forecast for %s' % date.strftime('%d %b %Y at %H UTC') ,loc='upper left')
-        annotation(args['ax'], 'Geopotential height @500hPa [m] and temperature @850hPa [C]' ,loc='lower left', fontsize=6)
-        annotation_run(args['ax'], args['time'])
+        an_fc = annotation_forecast(args['ax'],args['time'][i])
+        an_var = annotation(args['ax'], 'Geopotential height @500hPa [m] and temperature @850hPa [C]' ,loc='lower left', fontsize=6)
+        an_run = annotation_run(args['ax'], args['time'])
 
         if first:
             plt.colorbar(cs, orientation='horizontal', label='Temperature', pad=0.03, fraction=0.02)
@@ -108,7 +111,7 @@ def plot_files(dates, **args):
         else:
             plt.savefig(filename, **options_savefig)        
         
-        remove_collections([c, cs, labels])
+        remove_collections([c, cs, labels, an_fc, an_var, an_run])
 
         first = False 
 

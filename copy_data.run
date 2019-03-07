@@ -51,7 +51,7 @@ cp /home/mpim/m300382/icon_globe/*.py ./
 ##### DOWNLOAD model data #################
 # 2-D variables
 variables=("PMSL" "CLCT" "TOT_PREC" "VMAX_10M" "RAIN_CON" "RAIN_GSP" "SNOW_CON" "SNOW_GSP" "T_2M" "TD_2M" "WW" "CAPE_CON")
-${parallel} -j 16 download_merge_2d_variable_icon_globe ::: "${variables[@]}"
+${parallel} -j 8 download_merge_2d_variable_icon_globe ::: "${variables[@]}"
 
 # 3-D variables on pressure levels
 variables=("T" "FI" "RELHUM" "U" "V")
@@ -81,7 +81,7 @@ ncftpput -R -v altervista icon_globe/meteograms meteogram_*
 scripts=("plot_jetstream.py" "plot_rain_acc.py" "plot_clouds.py" "plot_geop_500.py" "plot_mslp_wind.py" "plot_thetae.py")
 projections=("world" "nh" "us")
 
-${parallel} -j 16 ${python} ::: "${scripts[@]}" ::: "${projections[@]}"
+${parallel} -j 6 ${python} ::: "${scripts[@]}" ::: "${projections[@]}"
 ###########################################
 
 ##### UPLOAD figures to FTP server ########

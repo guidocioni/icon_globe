@@ -52,10 +52,14 @@ def get_projection(lon, lat, projection="nh", countries=True, regions=False, lab
         m = Basemap(projection='cyl', llcrnrlon=-15, llcrnrlat=29, urcrnrlon=35, urcrnrlat=71,resolution='i')
     elif projection=="world":
         m = Basemap(projection='kav7',lon_0=0, resolution='c')
+    elif projection=="nh_polar":
+        m = Basemap(projection='npaeqd',boundinglat=30,lon_0=0,resolution='l')
 
     m.drawcoastlines(linewidth=0.5, linestyle='solid', color='black', zorder=5)
     if countries:
         m.drawcountries(linewidth=0.5, linestyle='solid', color='black', zorder=5)
+	if projection=="world":
+		m.drawcountries(linewidth=0.5, linestyle='solid', color='white', zorder=5)
     if labels:
         m.drawparallels(np.arange(-90.0, 90.0, 10.), linewidth=0.2, color='white',
             labels=[True, False, False, True], fontsize=7)
@@ -78,19 +82,29 @@ def annotation_run(ax, time, loc='upper right',fontsize=8):
                       prop=dict(size=fontsize), frameon=True, loc=loc)
     at.patch.set_boxstyle("round,pad=0.,rounding_size=0.1")
     ax.add_artist(at)
+    return(at)
 
 def annotation(ax, text, loc='upper right',fontsize=8):
     """Put a general annotation in the plot."""
     at = AnchoredText('%s'% text, prop=dict(size=fontsize), frameon=True, loc=loc)
     at.patch.set_boxstyle("round,pad=0.,rounding_size=0.1")
     ax.add_artist(at)
+    return(at)
+
+def annotation_forecast(ax, time, loc='upper left',fontsize=8):
+    """Put annotation of the forecast time."""
+    at = AnchoredText('Forecast for %s' % time.strftime('%A %d %b %Y at %H UTC'), 
+                       prop=dict(size=fontsize), frameon=True, loc=loc)
+    at.patch.set_boxstyle("round,pad=0.,rounding_size=0.1")
+    ax.add_artist(at)
+    return(at)
 
 def truncate_colormap(cmap, minval=0.0, maxval=1.0, n=256):
     """Truncate a colormap by specifying the start and endpoint."""
     new_cmap = colors.LinearSegmentedColormap.from_list(
         'trunc({n},{a:.2f},{b:.2f})'.format(n=cmap.name, a=minval, b=maxval),
         cmap(np.linspace(minval, maxval, n)))
-    return new_cmap
+    return(new_cmap)
 
 def get_colormap(cmap_type):
     """Create a custom colormap."""
@@ -115,5 +129,7 @@ def remove_collections(elements):
                     coll.remove()
             except ValueError:
                 print('WARNING: Collection is empty')
+            except TypeError:
+                element.remove() 
         except ValueError:
             print('WARNING: Collection is empty')

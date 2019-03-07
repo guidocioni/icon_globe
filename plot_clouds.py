@@ -54,8 +54,8 @@ def main():
     time = pd.to_datetime(dset.time.values)
     cum_hour=np.array((time-time[0]) / pd.Timedelta('1 hour')).astype("int")
 
-    levels_rain   = (1., 1.25, 1.5, 1.75, 2.0, 2.25, 2.5, 5, 6, 7, 8, 9, 10, 12, 15, 20)
-    levels_snow   = (1, 1.5, 2, 2.5, 3, 4, 5, 10, 20)
+    levels_rain   = (0.5, 1., 1.25, 1.5, 1.75, 2.0, 2.25, 2.5, 5, 6, 7, 8, 9, 10, 12, 15, 20)
+    levels_snow   = (0.5, 1., 1.5, 2, 2.5, 3, 4, 5, 10, 20)
     levels_clouds = np.arange(10, 100, 1)
     levels_mslp   = np.arange(mslp.min().astype("int"), mslp.max().astype("int"), 7.)
 
@@ -102,7 +102,8 @@ def plot_files(dates, **args):
         # Find index in the original array to subset when plotting
         i = np.argmin(np.abs(date - args['time'])) 
         # Build the name of the output image
-        filename = subfolder_images[args['projection']]+'/'+variable_name+'_%s.png' % args['cum_hour'][i]#date.strftime('%Y%m%d%H')#
+        if not debug:
+            filename = subfolder_images[args['projection']]+'/'+variable_name+'_%s.png' % args['cum_hour'][i]#date.strftime('%Y%m%d%H')#
         # Test if the image already exists, although this behaviour should be removed in the future
         # since we always want to overwrite old files.
         # if os.path.isfile(filename):
@@ -124,9 +125,9 @@ def plot_files(dates, **args):
                              levels=args['levels_mslp'], colors='red', linewidths=0.5, zorder=4, alpha=0.6)
 
         labels = args['ax'].clabel(c, c.levels, inline=True, fmt='%4.0f' , fontsize=5)
-        annotation(args['ax'],'Forecast for %s' % date.strftime('%d %b %Y at %H UTC') ,loc='upper left')
-        annotation(args['ax'], 'Clouds, rain, snow and MSLP' ,loc='lower left', fontsize=6)
-        annotation_run(args['ax'], args['time'])
+        an_fc = annotation_forecast(args['ax'],args['time'][i])
+        an_var = annotation(args['ax'], 'Clouds, rain, snow and MSLP' ,loc='lower left', fontsize=6)
+        an_run = annotation_run(args['ax'], args['time'])
 
         if first:
             ax_cbar = plt.gcf().add_axes([0.3, 0.1, 0.2, 0.01])
@@ -143,7 +144,7 @@ def plot_files(dates, **args):
         else:
             plt.savefig(filename, **options_savefig)        
         
-        remove_collections([c, cs_rain, cs_snow, cs_clouds, labels])
+        remove_collections([c, cs_rain, cs_snow, cs_clouds, labels, an_fc, an_var, an_run])
 
         first = False 
 

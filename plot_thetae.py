@@ -84,7 +84,8 @@ def plot_files(dates, **args):
         # Find index in the original array to subset when plotting
         i = np.argmin(np.abs(date - args['time'])) 
         # Build the name of the output image
-        filename = subfolder_images[args['projection']]+'/'+variable_name+'_%s.png' % args['cum_hour'][i]
+        if not debug:
+            filename = subfolder_images[args['projection']]+'/'+variable_name+'_%s.png' % args['cum_hour'][i]
 
         cs = args['ax'].tricontourf(args['x'], args['y'], args['theta_e'][i, args['mask']], extend='both', cmap='nipy_spectral',
                          levels=args['levels_thetae'])
@@ -94,9 +95,9 @@ def plot_files(dates, **args):
                              colors='white', linewidths=0.5)
 
         labels = args['ax'].clabel(c, c.levels, inline=True, fmt='%4.0f' , fontsize=5)
-        annotation(args['ax'],'Forecast for %s' % date.strftime('%d %b %Y at %H UTC') ,loc='upper left')
-        annotation(args['ax'], 'Equivalent Potential Temperature @850hPa [C] and MSLP [hPa]' ,loc='lower left', fontsize=6)
-        annotation_run(args['ax'], args['time'])
+        an_fc = annotation_forecast(args['ax'],args['time'][i])
+        an_var = annotation(args['ax'], 'Equivalent Potential Temperature @850hPa [C] and MSLP [hPa]' ,loc='lower left', fontsize=6)
+        an_run = annotation_run(args['ax'], args['time'])
 
         if first:
             plt.colorbar(cs, orientation='horizontal', label='Temperature', pad=0.03, fraction=0.02)
@@ -106,7 +107,7 @@ def plot_files(dates, **args):
         else:
             plt.savefig(filename, **options_savefig)        
         
-        remove_collections([c, cs, labels])
+        remove_collections([c, cs, labels, an_fc, an_var, an_run])
 
         first = False 
 
