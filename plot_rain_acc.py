@@ -49,9 +49,7 @@ def main():
     levels_precip = (5, 6, 7, 8, 9, 10, 12, 15, 20, 25, 30, 35, 40, 45, 50, 60, 70, 80, 90, 100, 150, 200, 250)
     levels_mslp = np.arange(mslp.min().astype("int"), mslp.max().astype("int"), 7.)
 
-    cmap = truncate_colormap(plt.get_cmap('gist_stern_r'), 0., 0.9)
-
-
+    cmap, norm = get_colormap_norm("rain_acc", levels_precip)
 
     for projection in projections:# This works regardless if projections is either single value or array
         fig = plt.figure(figsize=(figsize_x, figsize_y))
@@ -68,7 +66,7 @@ def main():
         args=dict(m=m, x=x, y=y, ax=ax,
                  precip_acc=precip_acc, mslp=mslp, mask=mask, levels_precip=levels_precip,
                  levels_mslp=levels_mslp, time=time, projection=projection, cum_hour=cum_hour,
-                 cmap=cmap)
+                 cmap=cmap, norm=norm)
         
         print('Pre-processing finished, launching plotting scripts')
         if debug:
@@ -89,14 +87,9 @@ def plot_files(dates, **args):
         # Build the name of the output image
         if not debug:
             filename = subfolder_images[args['projection']]+'/'+variable_name+'_%s.png' % args['cum_hour'][i]#date.strftime('%Y%m%d%H')#
-        # Test if the image already exists, although this behaviour should be removed in the future
-        # since we always want to overwrite old files.
-        # if os.path.isfile(filename):
-        #     print('Skipping '+str(filename))
-        #     continue 
 
         cs = args['ax'].tricontourf(args['x'], args['y'], args['precip_acc'][i, args['mask']],
-                         extend='max', cmap=args['cmap'],
+                         extend='max', cmap=args['cmap'], norm=args['norm'],
                          levels=args['levels_precip'])
 
         # Unfortunately m.contour with tri = True doesn't work because of a bug 

@@ -49,7 +49,7 @@ def main():
     time = pd.to_datetime(dset.time.values)
     cum_hour=np.array((time-time[0]) / pd.Timedelta('1 hour')).astype("int")
 
-    levels_thetae = np.arange(-20., 70., .5)
+    levels_thetae = np.arange(-25., 75., 1.)
     levels_mslp = np.arange(mslp.min().astype("int"), mslp.max().astype("int"), 7.)
 
     for projection in projections:# This works regardless if projections is either single value or array

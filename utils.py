@@ -5,14 +5,16 @@ import matplotlib.colors as colors
 import metpy.calc as mpcalc
 from metpy.units import units
 import pandas as pd
+from matplotlib.colors import from_levels_and_colors
+import seaborn as sns
 
 folder = '/scratch/local1/m300382/icon_globe/'
 input_file=folder+'ICON_*_3h.nc' # 3 hourly
 # input_file=folder+'ICON_*[!3h].nc' # hourly
 folder_images = folder 
 chunks_size = 10 
-processes = 10
-figsize_x = 16 
+processes = 4
+figsize_x = 14 
 figsize_y = 9
 
 # Options for savefig
@@ -38,6 +40,13 @@ def get_coordinates(dataset):
     # We have to return an array otherwise Basemap 
     # will complain
     return(dataset['clon'].values, dataset['clat'].values)
+
+def get_city_coordinates(city):
+    """Get the lat/lon coordinates of a city given its name using geopy."""
+    from geopy.geocoders import Nominatim
+    geolocator =Nominatim(user_agent='meteogram')
+    loc = geolocator.geocode(city)
+    return(loc.longitude, loc.latitude)
 
 def get_projection(lon, lat, projection="nh", countries=True, regions=False, labels=False):
     """Create the projection in Basemap and returns the x, y array to use it in a plot"""
@@ -115,6 +124,24 @@ def get_colormap(cmap_type):
          
     cmap = colors.LinearSegmentedColormap.from_list(cmap_type, colors_tuple, colors_tuple.shape[0])
     return(cmap)
+
+def get_colormap_norm(cmap_type, levels):
+    """Create a custom colormap."""
+    if cmap_type == "rain":
+        cmap, norm = from_levels_and_colors(levels, sns.color_palette("Blues", n_colors=len(levels)),
+                                                    extend='max')
+    elif cmap_type == "snow":
+        cmap, norm = from_levels_and_colors(levels, sns.color_palette("PuRd", n_colors=len(levels)),
+                                                    extend='max')
+    elif cmap_type == "snow_discrete":    
+        colors = ["#DBF069","#5AE463","#E3BE45","#65F8CA","#32B8EB",
+                    "#1D64DE","#E97BE4","#F4F476","#E78340","#D73782","#702072"]
+        cmap, norm = from_levels_and_colors(levels, colors, extend='max')
+    elif cmap_type == "rain_acc":    
+        cmap, norm = from_levels_and_colors(levels, sns.color_palette('gist_stern_r', n_colors=len(levels)),
+                         extend='max')
+        
+    return(cmap, norm)
 
 def remove_collections(elements):
     """Remove the collections of an artist to clear the plot without

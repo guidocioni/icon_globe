@@ -71,9 +71,7 @@ rm icon_global_*
 ###########################################
 
 ##### PLOTS results ######################
-#Meteograms
-ncl -Q lat_point=53.55 lon_point=9.99 file_in=\"/scratch/local1/m300382/icon_globe/ICON_$year$month$day$run.nc\" 'city="Hamburg"' plot_meteogram.ncl
-ncl -Q lat_point=41.8084 lon_point=-72.2495 file_in=\"/scratch/local1/m300382/icon_globe/ICON_$year$month$day$run.nc\" 'city="Storrs"' plot_meteogram.ncl
+${python} plot_meteogram.py Hamburg Storrs
 
 ncftpput -R -v altervista icon_globe/meteograms meteogram_*
 #
@@ -81,7 +79,7 @@ ncftpput -R -v altervista icon_globe/meteograms meteogram_*
 scripts=("plot_jetstream.py" "plot_rain_acc.py" "plot_clouds.py" "plot_geop_500.py" "plot_mslp_wind.py" "plot_thetae.py")
 projections=("world" "nh" "us")
 
-${parallel} -j 6 ${python} ::: "${scripts[@]}" ::: "${projections[@]}"
+${parallel} -j 4 ${python} ::: "${scripts[@]}" ::: "${projections[@]}"
 ###########################################
 
 ##### UPLOAD figures to FTP server ########

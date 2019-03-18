@@ -56,13 +56,12 @@ def main():
 
     levels_rain   = (0.5, 1., 1.25, 1.5, 1.75, 2.0, 2.25, 2.5, 5, 6, 7, 8, 9, 10, 12, 15, 20)
     levels_snow   = (0.5, 1., 1.5, 2, 2.5, 3, 4, 5, 10, 20)
-    levels_clouds = np.arange(10, 100, 1)
+    levels_clouds = np.arange(10, 100, 5)
     levels_mslp   = np.arange(mslp.min().astype("int"), mslp.max().astype("int"), 7.)
 
-    cmap_rain = plt.get_cmap('Blues')
-    cmap_snow = plt.get_cmap('PuRd')
+    cmap_snow, norm_snow = get_colormap_norm("snow", levels_snow)
+    cmap_rain, norm_rain = get_colormap_norm("rain", levels_rain)
     cmap_clouds = truncate_colormap(plt.get_cmap('Greys'), 0., 0.5)
-
 
     for projection in projections:# This works regardless if projections is either single value or array
         fig = plt.figure(figsize=(figsize_x, figsize_y))
@@ -83,7 +82,8 @@ def main():
                  rain=rain, snow=snow, mslp=mslp, clouds=clouds, mask=mask,
                  levels_mslp=levels_mslp, levels_rain=levels_rain, levels_snow=levels_snow,
                  levels_clouds=levels_clouds, time=time, projection=projection, cum_hour=cum_hour,
-                 cmap_rain=cmap_rain, cmap_snow=cmap_snow, cmap_clouds=cmap_clouds)
+                 cmap_rain=cmap_rain, cmap_snow=cmap_snow, cmap_clouds=cmap_clouds,
+                 norm_snow=norm_snow, norm_rain=norm_rain)
         
         print('Pre-processing finished, launching plotting scripts')
         if debug:
@@ -111,10 +111,10 @@ def plot_files(dates, **args):
         #     continue 
 
         cs_rain = args['ax'].tricontourf(args['x'], args['y'], args['rain'][i, args['mask']],
-                         extend='max', cmap=args['cmap_rain'],
+                         extend='max', cmap=args['cmap_rain'], norm=args['norm_rain'],
                          levels=args['levels_rain'], zorder=2)
         cs_snow = args['ax'].tricontourf(args['x'], args['y'], args['snow'][i, args['mask']],
-                         extend='max', cmap=args['cmap_snow'],
+                         extend='max', cmap=args['cmap_snow'], norm=args['norm_snow'],
                          levels=args['levels_snow'], zorder=3)
         cs_clouds = args['ax'].tricontourf(args['x'], args['y'], args['clouds'][i, args['mask']],
                          extend='max', cmap=args['cmap_clouds'],
