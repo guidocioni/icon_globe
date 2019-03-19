@@ -72,11 +72,11 @@ for city in cities:# This works regardless if cities is either single value or a
 			 		  levels=np.linspace(0, 100, 5), colors='white', alpha=0.7)
 	plt.clabel(cs2, fmt='%i', inline=True)
 	v = ax0.barbs(time, dset_city['t'].metpy.vertical.values, dset_city['u'].T, dset_city['v'].T,
-	              alpha=0.3, length=6)
+	              alpha=0.3, length=5.5)
 	ax0.xaxis.set_major_locator(mdates.HourLocator(interval=6))
 	ax0.grid(True, alpha=0.5)
 	an_fc = annotation_run(ax0, time)
-	an_var = annotation(ax0, 'RH, Temp. and Winds @(%3.1fN,%3.1fE)' % (dset_city.clat,dset_city.clon) ,
+	an_var = annotation(ax0, 'RH, Temp. and Winds @(%3.1fN, %3.1fE)' % (dset_city.clat,dset_city.clon) ,
 	                    loc='upper left')
 
 	ax1 = plt.subplot(gs[1])
@@ -85,7 +85,7 @@ for city in cities:# This works regardless if cities is either single value or a
 	ts1 = ax1.plot(time, dset_city['2d'], label='2m $T_d$', color='darkcyan', linestyle='dashed')
 	ax1.axes.get_xaxis().set_ticklabels([])
 	plt.legend(fontsize=7)
-	ax1.set_ylabel('2m $T$/$T_d$ [deg C]')
+	ax1.set_ylabel('2m $T$, $T_d$ [$^{\circ}$C]')
 	ax1.xaxis.set_major_locator(mdates.HourLocator(interval=6))
 	ax1.grid(True, alpha=0.5)
 
@@ -110,16 +110,18 @@ for city in cities:# This works regardless if cities is either single value or a
 
 	ax3 = plt.subplot(gs[3])
 	ax3.set_xlim(time[0], time[-1])
-	ts = ax3.plot(time, rain_acc, label='Rain (acc.)', color='dodgerblue', linestyle='dashed')
-	ts1 = ax3.plot(time, snow_acc, label='Snow (acc.)', color='orchid', linestyle='dashed')
+	ts = ax3.plot(time, rain_acc, label='Rain (acc.)', color='dodgerblue', linewidth=0.1)
+	ts1 = ax3.plot(time, snow_acc, label='Snow (acc.)', color='orchid', linewidth=0.1)
+	ax3.fill_between(time,rain_acc, y2=0, facecolor='dodgerblue', alpha=0.2)
+	ax3.fill_between(time,snow_acc, y2=0, facecolor='orchid', alpha=0.2)
 	ax3.set_ylim(bottom=0)
-	ax3.legend(fontsize=7)
 	ax3.set_ylabel('Accum. [mm]')
 	ax33=ax3.twinx()
 	ts2 = ax33.plot(time, rain, label='Rain', color='dodgerblue')
 	ts3 = ax33.plot(time, snow, label='Snow', color='orchid')
 	ax33.set_ylim(bottom=0)
 	ax33.set_ylabel('Inst. [mm h$^{-1}$]')
+	ax33.legend(fontsize=7)
 
 	ax3.grid(True, alpha=0.5)
 	ax3.xaxis.set_major_locator(mdates.HourLocator(interval=6))
