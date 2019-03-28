@@ -63,7 +63,8 @@ def main():
 
         # All the arguments that need to be passed to the plotting function
         args=dict(m=m, x=x, y=y, ax=ax,
-                 temp_850=temp_850, gph_500=gph_500, mask=mask, levels_temp=levels_temp, cmap=cmap,
+                 temp_850=np.compress(mask, temp_850, axis=1), gph_500=np.compress(mask, gph_500, axis=1),
+                 levels_temp=levels_temp, cmap=cmap,
                  levels_gph=levels_gph, time=time, projection=projection, cum_hour=cum_hour)
         
         print('Pre-processing finished, launching plotting scripts')
@@ -84,18 +85,13 @@ def plot_files(dates, **args):
         i = np.argmin(np.abs(date - args['time'])) 
         # Build the name of the output image
         if not debug:
-            filename = subfolder_images[args['projection']]+'/'+variable_name+'_%s.png' % args['cum_hour'][i]#date.strftime('%Y%m%d%H')#
-        # Test if the image already exists, although this behaviour should be removed in the future
-        # since we always want to overwrite old files.
-        # if os.path.isfile(filename):
-        #     print('Skipping '+str(filename))
-        #     continue 
+            filename = subfolder_images[args['projection']]+'/'+variable_name+'_%s.png' % args['cum_hour'][i]
 
-        cs = args['ax'].tricontourf(args['x'], args['y'], args['temp_850'][i, args['mask']], extend='both', cmap=args['cmap'],
+        cs = args['ax'].tricontourf(args['x'], args['y'], args['temp_850'][i], extend='both', cmap=args['cmap'],
                                     levels=args['levels_temp'])
 
         # Unfortunately m.contour with tri = True doesn't work because of a bug 
-        c = args['ax'].tricontour(args['x'], args['y'], args['gph_500'][i,args['mask']], levels=args['levels_gph'],
+        c = args['ax'].tricontour(args['x'], args['y'], args['gph_500'][i], levels=args['levels_gph'],
                              colors='white', linewidths=1.)
 
         labels = args['ax'].clabel(c, c.levels, inline=True, fmt='%4.0f' , fontsize=5)

@@ -64,8 +64,9 @@ def main():
         # Parallelize the plotting by dividing into chunks and processes 
         # All the arguments that need to be passed to the plotting function
         args=dict(m=m, x=x, y=y, ax=ax,
-                 theta_e=theta_e, mslp=mslp, mask=mask, levels_thetae=levels_thetae,
-                 levels_mslp=levels_mslp, time=time, projection=projection, cum_hour=cum_hour)
+                 theta_e=np.compress(mask, theta_e, axis=1), mslp=np.compress(mask, mslp, axis=1),
+                 levels_thetae=levels_thetae,levels_mslp=levels_mslp, time=time, projection=projection,
+                 cum_hour=cum_hour)
 
         print('Pre-processing finished, launching plotting scripts')
         if debug:
@@ -87,11 +88,11 @@ def plot_files(dates, **args):
         if not debug:
             filename = subfolder_images[args['projection']]+'/'+variable_name+'_%s.png' % args['cum_hour'][i]
 
-        cs = args['ax'].tricontourf(args['x'], args['y'], args['theta_e'][i, args['mask']], extend='both', cmap='nipy_spectral',
+        cs = args['ax'].tricontourf(args['x'], args['y'], args['theta_e'][i], extend='both', cmap='nipy_spectral',
                          levels=args['levels_thetae'])
 
         # Unfortunately m.contour with tri = True doesn't work because of a bug 
-        c = args['ax'].tricontour(args['x'], args['y'], args['mslp'][i,args['mask']], levels=args['levels_mslp'],
+        c = args['ax'].tricontour(args['x'], args['y'], args['mslp'][i], levels=args['levels_mslp'],
                              colors='white', linewidths=0.5)
 
         labels = args['ax'].clabel(c, c.levels, inline=True, fmt='%4.0f' , fontsize=5)

@@ -79,7 +79,8 @@ def main():
 
         # All the arguments that need to be passed to the plotting function
         args=dict(m=m, x=x, y=y, ax=ax,
-                 rain=rain, snow=snow, mslp=mslp, clouds=clouds, mask=mask,
+                 rain=np.compress(mask, rain, axis=1), snow=np.compress(mask, snow, axis=1),
+                 mslp=np.compress(mask, mslp, axis=1), clouds=np.compress(mask, clouds, axis=1),
                  levels_mslp=levels_mslp, levels_rain=levels_rain, levels_snow=levels_snow,
                  levels_clouds=levels_clouds, time=time, projection=projection, cum_hour=cum_hour,
                  cmap_rain=cmap_rain, cmap_snow=cmap_snow, cmap_clouds=cmap_clouds,
@@ -103,25 +104,20 @@ def plot_files(dates, **args):
         i = np.argmin(np.abs(date - args['time'])) 
         # Build the name of the output image
         if not debug:
-            filename = subfolder_images[args['projection']]+'/'+variable_name+'_%s.png' % args['cum_hour'][i]#date.strftime('%Y%m%d%H')#
-        # Test if the image already exists, although this behaviour should be removed in the future
-        # since we always want to overwrite old files.
-        # if os.path.isfile(filename):
-        #     print('Skipping '+str(filename))
-        #     continue 
+            filename = subfolder_images[args['projection']]+'/'+variable_name+'_%s.png' % args['cum_hour'][i]
 
-        cs_rain = args['ax'].tricontourf(args['x'], args['y'], args['rain'][i, args['mask']],
+        cs_rain = args['ax'].tricontourf(args['x'], args['y'], args['rain'][i],
                          extend='max', cmap=args['cmap_rain'], norm=args['norm_rain'],
                          levels=args['levels_rain'], zorder=2)
-        cs_snow = args['ax'].tricontourf(args['x'], args['y'], args['snow'][i, args['mask']],
+        cs_snow = args['ax'].tricontourf(args['x'], args['y'], args['snow'][i],
                          extend='max', cmap=args['cmap_snow'], norm=args['norm_snow'],
                          levels=args['levels_snow'], zorder=3)
-        cs_clouds = args['ax'].tricontourf(args['x'], args['y'], args['clouds'][i, args['mask']],
+        cs_clouds = args['ax'].tricontourf(args['x'], args['y'], args['clouds'][i],
                          extend='max', cmap=args['cmap_clouds'],
                          levels=args['levels_clouds'], zorder=1)
 
         # Unfortunately m.contour with tri = True doesn't work because of a bug 
-        c = args['ax'].tricontour(args['x'], args['y'], args['mslp'][i,args['mask']],
+        c = args['ax'].tricontour(args['x'], args['y'], args['mslp'][i],
                              levels=args['levels_mslp'], colors='red', linewidths=0.5, zorder=4, alpha=0.6)
 
         labels = args['ax'].clabel(c, c.levels, inline=True, fmt='%4.0f' , fontsize=5)

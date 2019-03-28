@@ -6,11 +6,9 @@ export SHELL=$(type -p bash)
 ########################################### 
 
 ##### LOAD environmental variables ########
-export NCARG_ROOT=/sw/jessie-x64/ncl-6.4.0-nodap-precompiled 
-export PATH=$NCARG_ROOT/bin:$PATH 
 export cdo=/sw/jessie-x64/cdo-1.8.0-gccsys/bin/cdo
 export python=/home/mpim/m300382/.conda/envs/my_base/bin/python
-export parallel=/client/bin/parallel
+export parallel=/home/mpim/m300382/.conda/envs/my_base/bin/parallel
 ########################################### 
 
 export QT_QPA_PLATFORM=offscreen # Needed to avoid errors when using Python without display
@@ -45,7 +43,6 @@ cd /scratch/local1/m300382/icon_globe/
 
 # remove here the file so it remains until next time to be used
 rm *.nc
-cp /home/mpim/m300382/icon_globe/*.ncl ./
 cp /home/mpim/m300382/icon_globe/*.py ./
 
 ##### DOWNLOAD model data #################
@@ -77,7 +74,7 @@ ncftpput -R -v altervista icon_globe/meteograms meteogram_*
 #
 # Parallelize the plotting script using GNU Parallel
 scripts=("plot_jetstream.py" "plot_rain_acc.py" "plot_clouds.py" "plot_geop_500.py" "plot_mslp_wind.py" "plot_thetae.py")
-projections=("world" "nh" "us")
+projections=("nh" "us")
 
 ${parallel} -j 4 ${python} ::: "${scripts[@]}" ::: "${projections[@]}"
 ###########################################
@@ -96,6 +93,8 @@ ncftpput -R -v altervista icon_us/precip_clouds us/precip_clouds_*
 ncftpput -R -v altervista icon_us/precip_acc us/precip_acc_*
 ncftpput -R -v altervista icon_us/winds_jet us/winds_jet_*
 ncftpput -R -v altervista icon_us/winds10m us/winds10m_*
+
+${parallel} -j 4 ${python} ::: "${scripts[@]}" ::: "world"
 
 ncftpput -R -v altervista icon_world/thetae_850 world/thetae_850_*
 ncftpput -R -v altervista icon_world/precip_clouds world/precip_clouds_*
@@ -116,8 +115,5 @@ rm us/*.png
 
 rm *.gif
 rm *.py
-
-# #remove all the remaining files
-rm *.ncl 
 
 cd -

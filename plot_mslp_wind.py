@@ -66,9 +66,9 @@ def main():
 
         # All the arguments that need to be passed to the plotting function
         args=dict(m=m, x=x, y=y, ax=ax,
-                 winds_10m=winds_10m, mslp=mslp, mask=mask, levels_winds_10m=levels_winds_10m,
-                 levels_mslp=levels_mslp, time=time, projection=projection, cum_hour=cum_hour,
-                 cmap=cmap)
+                 winds_10m=np.compress(mask, winds_10m, axis=1), mslp=np.compress(mask, mslp, axis=1),
+                 levels_winds_10m=levels_winds_10m, levels_mslp=levels_mslp, time=time,
+                 projection=projection, cum_hour=cum_hour, cmap=cmap)
         
         print('Pre-processing finished, launching plotting scripts')
         if debug:
@@ -88,18 +88,13 @@ def plot_files(dates, **args):
         i = np.argmin(np.abs(date - args['time'])) 
         # Build the name of the output image
         if not debug:
-            filename = subfolder_images[args['projection']]+'/'+variable_name+'_%s.png' % args['cum_hour'][i]#date.strftime('%Y%m%d%H')#
-        # Test if the image already exists, although this behaviour should be removed in the future
-        # since we always want to overwrite old files.
-        # if os.path.isfile(filename):
-        #     print('Skipping '+str(filename))
-        #     continue 
+            filename = subfolder_images[args['projection']]+'/'+variable_name+'_%s.png' % args['cum_hour'][i]
 
-        cs = args['ax'].tricontourf(args['x'], args['y'], args['winds_10m'][i, args['mask']],
+        cs = args['ax'].tricontourf(args['x'], args['y'], args['winds_10m'][i],
                          extend='max', cmap=args['cmap'], levels=args['levels_winds_10m'])
 
         # Unfortunately m.contour with tri = True doesn't work because of a bug 
-        c = args['ax'].tricontour(args['x'], args['y'], args['mslp'][i,args['mask']],
+        c = args['ax'].tricontour(args['x'], args['y'], args['mslp'][i],
                              levels=args['levels_mslp'], colors='black', linewidths=0.5)
 
         labels = args['ax'].clabel(c, c.levels, inline=True, fmt='%4.0f' , fontsize=5)

@@ -32,6 +32,7 @@ print('Using file '+file[0])
 dset = xr.open_dataset(file[0])
 dset = dset.metpy.parse_cf()
 _ , _ = get_coordinates(dset) #so that it converts them to degrees 
+hsurf = xr.open_dataset('/home/mpim/m300382/icon_globe/ICON_iko_invar_package_world_grid.nc')['h'].squeeze()
 
 time = pd.to_datetime(dset.time.values)
 cum_hour=np.array((time-time[0]) / pd.Timedelta('1 hour')).astype("int")
@@ -41,6 +42,7 @@ for city in cities:# This works regardless if cities is either single value or a
 	lon, lat = get_city_coordinates(city)
 	icell = np.argmin(np.sqrt((dset.clon-lon)**2+(dset.clat-lat)**2))
 	dset_city =  dset.sel(ncells=icell, cell=icell)
+	height = hsurf.sel(ncells=icell)
 	dset_city['t'].metpy.convert_units('degC')
 	dset_city['t'].metpy.vertical.metpy.convert_units('hPa')
 	dset_city['2t'].metpy.convert_units('degC')
@@ -76,7 +78,7 @@ for city in cities:# This works regardless if cities is either single value or a
 	ax0.xaxis.set_major_locator(mdates.HourLocator(interval=6))
 	ax0.grid(True, alpha=0.5)
 	an_fc = annotation_run(ax0, time)
-	an_var = annotation(ax0, 'RH, Temp. and Winds @(%3.1fN, %3.1fE)' % (dset_city.clat,dset_city.clon) ,
+	an_var = annotation(ax0, 'RH, $T$ and $u,v$ @(%3.1fN, %3.1fE, %d m)' % (dset_city.clat,dset_city.clon,height.values) ,
 	                    loc='upper left')
 
 	ax1 = plt.subplot(gs[1])
