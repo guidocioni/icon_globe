@@ -7,7 +7,7 @@ export SHELL=$(type -p bash)
 
 ##### LOAD environmental variables ########
 export cdo=/sw/jessie-x64/cdo-1.8.0-gccsys/bin/cdo
-export python=/home/mpim/m300382/.conda/envs/my_base/bin/python
+export python="/home/mpim/m300382/.conda/envs/my_base/bin/python -W ignore"
 export parallel=/home/mpim/m300382/.conda/envs/my_base/bin/parallel
 ########################################### 
 
