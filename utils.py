@@ -8,6 +8,12 @@ import pandas as pd
 from matplotlib.colors import from_levels_and_colors
 import seaborn as sns
 
+import warnings
+warnings.filterwarnings(
+    action='ignore',
+    message='The unit of the quantity is stripped.'
+)
+
 folder = '/scratch/local1/m300382/icon_globe/'
 input_file=folder+'ICON_*_3h.nc' # 3 hourly
 # input_file=folder+'ICON_*[!3h].nc' # hourly
@@ -67,8 +73,8 @@ def get_projection(lon, lat, projection="nh", countries=True, regions=False, lab
     m.drawcoastlines(linewidth=0.5, linestyle='solid', color='black', zorder=5)
     if countries:
         m.drawcountries(linewidth=0.5, linestyle='solid', color='black', zorder=5)
-	if projection=="world":
-		m.drawcountries(linewidth=0.5, linestyle='solid', color='white', zorder=5)
+    if projection=="world":
+        m.drawcountries(linewidth=0.5, linestyle='solid', color='white', zorder=5)
     if labels:
         m.drawparallels(np.arange(-90.0, 90.0, 10.), linewidth=0.2, color='white',
             labels=[True, False, False, True], fontsize=7)

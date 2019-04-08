@@ -22,10 +22,10 @@ export hour=`date +"%H"`
 export hour_no_zero=`date -u +"%-H"`
 # note that this date is in UTC which is needed for retrieving the correct run!
 
-if [ "$hour_no_zero" -ge 4 ] && [ "$hour_no_zero" -lt 10 ] 
+if [ "$hour_no_zero" -ge 4 ] && [ "$hour_no_zero" -lt 9 ] 
 then 
  run="00"
-elif [ "$hour_no_zero" -ge 10 ] && [ "$hour_no_zero" -lt 16 ] 
+elif [ "$hour_no_zero" -ge 9 ] && [ "$hour_no_zero" -lt 16 ] 
 then
  run="06"
 elif [ "$hour_no_zero" -ge 16 ] && [ "$hour_no_zero" -lt 21 ] 
@@ -94,6 +94,7 @@ ncftpput -R -v altervista icon_us/precip_acc us/precip_acc_*
 ncftpput -R -v altervista icon_us/winds_jet us/winds_jet_*
 ncftpput -R -v altervista icon_us/winds10m us/winds10m_*
 
+scripts=("plot_jetstream.py" "plot_rain_acc.py" "plot_geop_500.py" "plot_mslp_wind.py" "plot_thetae.py")
 ${parallel} -j 4 ${python} ::: "${scripts[@]}" ::: "world"
 
 ncftpput -R -v altervista icon_world/thetae_850 world/thetae_850_*
