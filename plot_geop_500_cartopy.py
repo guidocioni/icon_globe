@@ -1,4 +1,4 @@
-debug = False 
+debug = True 
 if not debug:
     import matplotlib
     matplotlib.use('Agg')
@@ -11,66 +11,66 @@ from glob import glob
 import numpy as np
 import pandas as pd
 from multiprocessing import Pool
+#from pathos.multiprocessing import ProcessPool as Pool
 from functools import partial
 import os 
 from utils import *
 import sys
 
 # The one employed for the figure name when exported 
-variable_name = 'thetae_850'
+variable_name = 'gph_500'
 
-print_message('Starting script to plot '+variable_name)
+print('Starting script to plot '+variable_name)
 
 # Get the projection as system argument from the call so that we can 
 # span multiple instances of this script outside
 if not sys.argv[1:]:
-    print_message('Projection not defined, falling back to default (nh, us, world)')
+    print('Projection not defined, falling back to default (nh, us, world)')
     projections = ['nh','us','world']
 else:    
     projections=sys.argv[1:]
-    print_message('Projection: '+str(projections))
 
 def main():
     """In the main function we basically read the files and prepare the variables to be plotted.
     This is not included in utils.py as it can change from case to case."""
     file = glob(input_file)
-    print_message('Using file '+file[0])
+    print('Using file '+file[0])
     dset = xr.open_dataset(file[0])
     dset = dset.metpy.parse_cf()
 
     # Select 850 hPa level using metpy
-    dset_850hpa = dset
-    theta_e = mpcalc.equivalent_potential_temperature(850 * units.hPa, dset['t'].metpy.sel(vertical=850 * units.hPa),
-                     mpcalc.dewpoint_rh(dset['t'].metpy.sel(vertical=850 * units.hPa), dset['r'].metpy.sel(vertical=850 * units.hPa)/100.)).to(units.degC)
+    temp_850 = dset['t'].metpy.sel(vertical=850 * units.hPa).metpy.unit_array.to('degC')
+    gph_500 = mpcalc.geopotential_to_height(dset['z'].metpy.sel(vertical=500 * units.hPa))
 
-    mslp = dset['prmsl'].metpy.unit_array.to('hPa')
     lon, lat = get_coordinates(dset)
 
     time = pd.to_datetime(dset.time.values)
     cum_hour=np.array((time-time[0]) / pd.Timedelta('1 hour')).astype("int")
 
-    levels_thetae = np.arange(-25., 75., 1.)
-    levels_mslp = np.arange(mslp.min().astype("int"), mslp.max().astype("int"), 7.)
+    levels_temp = np.arange(-35., 30., 1.)
+    levels_gph = np.arange(4800., 5800., 70.)
 
+    cmap = get_colormap("temp")
+    
     for projection in projections:# This works regardless if projections is either single value or array
-        fig = plt.figure(figsize=(figsize_x, figsize_y))
-        ax  = plt.gca()        
-        m, x, y =get_projection(lon, lat, projection)
+        fig = plt.figure(figsize=(figsize_x, figsize_y))      
+        
+        ax, x, y = get_projection_cartopy(plt, lon, lat, projection)
         # Create a mask to retain only the points inside the globe
-        # to avoid a bug in basemap and a problem in matplotlib
-        mask = np.logical_or(x<1.e20, y<1.e20)
-        x = np.compress(mask,x)
-        y = np.compress(mask,y)
-        # Parallelize the plotting by dividing into chunks and processes 
-        # All the arguments that need to be passed to the plotting function
-        args=dict(m=m, x=x, y=y, ax=ax,
-                 theta_e=np.compress(mask, theta_e, axis=1), mslp=np.compress(mask, mslp, axis=1),
-                 levels_thetae=levels_thetae,levels_mslp=levels_mslp, time=time, projection=projection,
-                 cum_hour=cum_hour)
+        # to avoid a bug in matplotlib
+        mask = np.invert(np.logical_or(np.isinf(x), np.isinf(y)))
+        x = np.compress(mask, x)
+        y = np.compress(mask, y)
 
-        print_message('Pre-processing finished, launching plotting scripts')
+        # All the arguments that need to be passed to the plotting function
+        args=dict(x=x, y=y, ax=ax,
+                 temp_850=np.compress(mask, temp_850, axis=1), gph_500=np.compress(mask, gph_500, axis=1),
+                 levels_temp=levels_temp, cmap=cmap,
+                 levels_gph=levels_gph, time=time, projection=projection, cum_hour=cum_hour)
+        
+        print('Pre-processing finished, launching plotting scripts')
         if debug:
-            plot_files(time[1:2], **args)
+            plot_files(time[0:1], **args)
         else:
             # Parallelize the plotting by dividing into chunks and processes 
             dates = chunks(time, chunks_size)
@@ -88,16 +88,16 @@ def plot_files(dates, **args):
         if not debug:
             filename = subfolder_images[args['projection']]+'/'+variable_name+'_%s.png' % args['cum_hour'][i]
 
-        cs = args['ax'].tricontourf(args['x'], args['y'], args['theta_e'][i], extend='both', cmap='nipy_spectral',
-                         levels=args['levels_thetae'])
+        cs = args['ax'].tricontourf(args['x'], args['y'], args['temp_850'][i], extend='both', cmap=args['cmap'],
+                                    levels=args['levels_temp'])
 
         # Unfortunately m.contour with tri = True doesn't work because of a bug 
-        c = args['ax'].tricontour(args['x'], args['y'], args['mslp'][i], levels=args['levels_mslp'],
-                             colors='white', linewidths=0.5)
+        c = args['ax'].tricontour(args['x'], args['y'], args['gph_500'][i], levels=args['levels_gph'],
+                             colors='white', linewidths=1.)
 
         labels = args['ax'].clabel(c, c.levels, inline=True, fmt='%4.0f' , fontsize=5)
         an_fc = annotation_forecast(args['ax'],args['time'][i])
-        an_var = annotation(args['ax'], 'Equivalent Potential Temperature @850hPa [C] and MSLP [hPa]' ,loc='lower left', fontsize=6)
+        an_var = annotation(args['ax'], 'Geopotential height @500hPa [m] and temperature @850hPa [C]' ,loc='lower left', fontsize=6)
         an_run = annotation_run(args['ax'], args['time'])
 
         if first:
@@ -113,8 +113,4 @@ def plot_files(dates, **args):
         first = False 
 
 if __name__ == "__main__":
-    import time
-    start_time=time.time()
     main()
-    elapsed_time=time.time()-start_time
-    print_message("script took " + time.strftime("%H:%M:%S", time.gmtime(elapsed_time)))

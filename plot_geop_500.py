@@ -20,12 +20,12 @@ import sys
 # The one employed for the figure name when exported 
 variable_name = 'gph_500'
 
-print('Starting script to plot '+variable_name)
+print_message('Starting script to plot '+variable_name)
 
 # Get the projection as system argument from the call so that we can 
 # span multiple instances of this script outside
 if not sys.argv[1:]:
-    print('Projection not defined, falling back to default (nh, us, world)')
+    print_message('Projection not defined, falling back to default (nh, us, world)')
     projections = ['nh','us','world']
 else:    
     projections=sys.argv[1:]
@@ -34,7 +34,7 @@ def main():
     """In the main function we basically read the files and prepare the variables to be plotted.
     This is not included in utils.py as it can change from case to case."""
     file = glob(input_file)
-    print('Using file '+file[0])
+    print_message('Using file '+file[0])
     dset = xr.open_dataset(file[0])
     dset = dset.metpy.parse_cf()
 
@@ -55,7 +55,7 @@ def main():
     for projection in projections:# This works regardless if projections is either single value or array
         fig = plt.figure(figsize=(figsize_x, figsize_y))
         ax  = plt.gca()        
-        m, x, y =get_projection(lon, lat, projection)
+        _, x, y = get_projection(lon, lat, projection)
         # Create a mask to retain only the points inside the globe
         # to avoid a bug in basemap and a problem in matplotlib
         mask = np.logical_or(x<1.e20, y<1.e20)
@@ -63,14 +63,14 @@ def main():
         y = np.compress(mask,y)
 
         # All the arguments that need to be passed to the plotting function
-        args=dict(m=m, x=x, y=y, ax=ax,
+        args=dict(x=x, y=y, ax=ax,
                  temp_850=np.compress(mask, temp_850, axis=1), gph_500=np.compress(mask, gph_500, axis=1),
                  levels_temp=levels_temp, cmap=cmap,
                  levels_gph=levels_gph, time=time, projection=projection, cum_hour=cum_hour)
         
-        print('Pre-processing finished, launching plotting scripts')
+        print_message('Pre-processing finished, launching plotting scripts')
         if debug:
-            plot_files(time[1:2], **args)
+            plot_files(time[0:1], **args)
         else:
             # Parallelize the plotting by dividing into chunks and processes 
             dates = chunks(time, chunks_size)
@@ -113,4 +113,8 @@ def plot_files(dates, **args):
         first = False 
 
 if __name__ == "__main__":
+    import time
+    start_time=time.time()
     main()
+    elapsed_time=time.time()-start_time
+    print_message("script took " + time.strftime("%H:%M:%S", time.gmtime(elapsed_time)))
