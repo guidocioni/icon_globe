@@ -38,7 +38,7 @@ def main():
     dset = dset.metpy.parse_cf()
 
     # Select 850 hPa level using metpy
-    precip_acc = dset['tp']
+    precip_acc = dset['tp'].values
     mslp = dset['prmsl'].metpy.unit_array.to('hPa')
 
     lon, lat = get_coordinates(dset)

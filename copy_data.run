@@ -6,7 +6,7 @@ export SHELL=$(type -p bash)
 ########################################### 
 
 ##### LOAD environmental variables ########
-export cdo=/sw/jessie-x64/cdo-1.8.0-gccsys/bin/cdo
+export cdo=/sw/jessie-x64/cdo/cdo-1.9.6-gccsys/bin/cdo
 export python="/home/mpim/m300382/.conda/envs/my_base/bin/python -W ignore"
 export parallel=/home/mpim/m300382/.conda/envs/my_base/bin/parallel
 ########################################### 
@@ -47,19 +47,21 @@ cp /home/mpim/m300382/icon_globe/*.py ./
 
 ##### DOWNLOAD model data #################
 # 2-D variables
-variables=("PMSL" "CLCT" "TOT_PREC" "VMAX_10M" "RAIN_CON" "RAIN_GSP" "SNOW_CON" "SNOW_GSP" "T_2M" "TD_2M" "WW" "CAPE_CON")
+variables=("PMSL" "CLCT" "TOT_PREC" "VMAX_10M" "RAIN_CON" "RAIN_GSP" "SNOW_CON" "SNOW_GSP" "T_2M" "TD_2M" "WW")
 ${parallel} -j 8 download_merge_2d_variable_icon_globe ::: "${variables[@]}"
 
 # 3-D variables on pressure levels
 variables=("T" "FI" "RELHUM" "U" "V")
-${parallel} -j 16 download_merge_3d_variable_icon_globe ::: "${variables[@]}"
+${parallel} -j 8 download_merge_3d_variable_icon_globe ::: "${variables[@]}"
 ###########################################
 
 ##### PROCESS model data #################
-${cdo} merge -setgrid,/home/mpim/m300382/icon_globe/icon_grid_0026_R03B07_G.nc icon_global_* ICON_${year}${month}${day}${run}.nc
+rm *.grib2
+${cdo} setgrid,/home/mpim/m300382/icon_globe/icon_grid_0026_R03B07_G.nc -merge icon_global_* ICON_${year}${month}${day}${run}.nc
 # plotting hourly data takes too much time, the following interpolation takes approx 1 min
 ${cdo} select,hour=0,3,6,9,12,15,18,21 ICON_${year}${month}${day}${run}.nc ICON_${year}${month}${day}${run}_3h.nc
 rm icon_global_*
+#rm *.grib2
 #rm ICON_${year}${month}${day}${run}.nc 
 
 # optional remapping
@@ -98,7 +100,7 @@ scripts=("plot_jetstream.py" "plot_rain_acc.py" "plot_geop_500.py" "plot_mslp_wi
 ${parallel} -j 4 ${python} ::: "${scripts[@]}" ::: "world"
 
 ncftpput -R -v altervista icon_world/thetae_850 world/thetae_850_*
-ncftpput -R -v altervista icon_world/precip_clouds world/precip_clouds_*
+#ncftpput -R -v altervista icon_world/precip_clouds world/precip_clouds_*
 ncftpput -R -v altervista icon_world/winds_jet world/winds_jet_*
 ncftpput -R -v altervista icon_world/winds10m world/winds10m_*
 ncftpput -R -v altervista icon_world/precip_acc world/precip_acc_*

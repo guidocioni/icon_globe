@@ -53,7 +53,7 @@ def main():
     snow = np.insert(arr=snow, obj=0, axis=0, values=np.zeros_like(snow[0]))
 
     mslp = dset['prmsl'].metpy.unit_array.to('hPa')
-    clouds = dset['CLCT']
+    clouds = dset['CLCT'].values
 
     lon, lat = get_coordinates(dset)
 
