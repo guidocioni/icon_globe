@@ -39,7 +39,7 @@ subfolder_images={
     'world' : folder_images+'world'    
 }
 
-folder_glyph = '/home/mpim/m300382/icons_weather/yrno_png/'
+folder_glyph = './yrno_png/'
 WMO_GLYPH_LOOKUP_PNG={
         '0': '01',
         '1': '02',

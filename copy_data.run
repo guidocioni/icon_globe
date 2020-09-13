@@ -70,7 +70,7 @@ rm icon_global_*
 ###########################################
 
 ##### PLOTS results ######################
-${python} plot_meteogram.py Hamburg Storrs Milan Pisa Toulouse Rome Naples Utrecht
+${python} plot_meteogram.py Hamburg Storrs Milan Pisa Toulouse Rome Naples Utrecht Sassari Palermo Cagliari
 
 ncftpput -R -v altervista icon_globe/meteograms meteogram_*
 #
