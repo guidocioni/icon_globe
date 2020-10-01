@@ -1,10 +1,13 @@
 #Given a variable name and year-month-day-run as environmental variables download and merges the variable
 parallelized_extraction(){
 	# You need to pass a glob patter which will be tested for files
-	until [ `ls -1 ${1}.bz2 2>/dev/null | wc -l ` -gt 0 ]; do
-	     sleep 1
+	# Wait at most 30 secs before the first grib2 appears
+	i=0
+	until [ `ls -1 ${1}.bz2 2>/dev/null | wc -l ` -gt 0 -o $i -ge 30 ]; do
+		((i++))
+	    sleep 1
 	done
-	# 
+	# Then extract them, or if there is something just exit with an error
 	while [ `ls -1 ${1}.bz2 2>/dev/null | wc -l ` -gt 0 ]; do
 		ls ${1}.bz2| parallel -j+0 bzip2 -d '{}' 
 	    sleep 1
