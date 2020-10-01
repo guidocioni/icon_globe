@@ -9,9 +9,7 @@ import metpy.calc as mpcalc
 from metpy.units import units
 from glob import glob
 import numpy as np
-import pandas as pd
 from multiprocessing import Pool
-#from pathos.multiprocessing import ProcessPool as Pool
 from functools import partial
 import os 
 from utils import *
@@ -33,19 +31,20 @@ else:
 def main():
     """In the main function we basically read the files and prepare the variables to be plotted.
     This is not included in utils.py as it can change from case to case."""
-    file = glob(input_file)
-    print_message('Using file '+file[0])
-    dset = xr.open_dataset(file[0])
-    dset = dset.metpy.parse_cf()
+    dset, time, cum_hour  = read_dataset(variables=['T', 'FI'])
 
     # Select 850 hPa level using metpy
-    temp_850 = dset['t'].metpy.sel(vertical=850 * units.hPa).metpy.unit_array.to('degC')
-    gph_500 = mpcalc.geopotential_to_height(dset['z'].metpy.sel(vertical=500 * units.hPa))
+    temp_850 = dset['t'].metpy.sel(vertical=850 * units.hPa).load()
+    temp_850.metpy.convert_units('degC')
+    z_500 = dset['z'].metpy.sel(vertical=500 * units.hPa).load()
+    gph_500 = mpcalc.geopotential_to_height(z_500)
+    gph_500 = xr.DataArray(gph_500, coords=z_500.coords,
+                           attrs={'standard_name': 'geopotential height',
+                                  'units': gph_500.units})
 
-    lon, lat = get_coordinates(dset)
+    del z_500
 
-    time = pd.to_datetime(dset.time.values)
-    cum_hour=np.array((time-time[0]) / pd.Timedelta('1 hour')).astype("int")
+    lon, lat = get_coordinates()
 
     levels_temp = np.arange(-35., 30., 1.)
     levels_gph = np.arange(4800., 5800., 70.)
@@ -53,21 +52,26 @@ def main():
     cmap = get_colormap("temp")
     
     for projection in projections:# This works regardless if projections is either single value or array
+        # Do preprocessing 
+
         fig = plt.figure(figsize=(figsize_x, figsize_y))
-        ax  = plt.gca()        
+        ax  = plt.gca()
+
         _, x, y = get_projection(lon, lat, projection)
+
         # Create a mask to retain only the points inside the globe
         # to avoid a bug in basemap and a problem in matplotlib
         mask = np.logical_or(x<1.e20, y<1.e20)
-        x = np.compress(mask,x)
-        y = np.compress(mask,y)
+        x = np.compress(mask, x)
+        y = np.compress(mask, y)
 
         # All the arguments that need to be passed to the plotting function
         args=dict(x=x, y=y, ax=ax,
-                 temp_850=np.compress(mask, temp_850, axis=1), gph_500=np.compress(mask, gph_500, axis=1),
+                 temp_850=np.compress(mask, temp_850, axis=1), 
+                 gph_500=np.compress(mask, gph_500, axis=1),
                  levels_temp=levels_temp, cmap=cmap,
                  levels_gph=levels_gph, time=time, projection=projection, cum_hour=cum_hour)
-        
+
         print_message('Pre-processing finished, launching plotting scripts')
         if debug:
             plot_files(time[0:1], **args)

@@ -32,19 +32,16 @@ else:
 def main():
     """In the main function we basically read the files and prepare the variables to be plotted.
     This is not included in utils.py as it can change from case to case."""
-    file = glob(input_file)
-    print_message('Using file '+file[0])
-    dset = xr.open_dataset(file[0])
-    dset = dset.metpy.parse_cf()
+    dset, time, cum_hour  = read_dataset(variables=['PMSL', 'VMAX_10M'])
+
 
     # Select 850 hPa level using metpy
-    winds_10m = dset['VMAX_10M'].squeeze().values*3.6
-    mslp = dset['prmsl'].metpy.unit_array.to('hPa')
+    winds_10m = dset['VMAX_10M'].load()
+    winds_10m.metpy.convert_units('kph')
+    mslp = dset['prmsl'].load()
+    mslp.metpy.convert_units('hPa')
 
-    lon, lat = get_coordinates(dset)
-
-    time = pd.to_datetime(dset.time.values)
-    cum_hour=np.array((time-time[0]) / pd.Timedelta('1 hour')).astype("int")
+    lon, lat = get_coordinates()
 
     levels_winds_10m = np.arange(20., 150., 5.)
     levels_mslp = np.arange(mslp.min().astype("int"), mslp.max().astype("int"), 7.)
@@ -53,8 +50,11 @@ def main():
 
     for projection in projections:# This works regardless if projections is either single value or array
         fig = plt.figure(figsize=(figsize_x, figsize_y))
+        
         ax  = plt.gca()
+        
         m, x, y =get_projection(lon, lat, projection)
+        
         m.drawmapboundary(fill_color='whitesmoke')
         m.fillcontinents(color='lightgray',lake_color='whitesmoke', zorder=0)
         # Create a mask to retain only the points inside the globe

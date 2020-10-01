@@ -32,30 +32,26 @@ else:
 def main():
     """In the main function we basically read the files and prepare the variables to be plotted.
     This is not included in utils.py as it can change from case to case."""
-    file = glob(input_file)
-    print_message('Using file '+file[0])
-    dset = xr.open_dataset(file[0])
-    dset = dset.metpy.parse_cf()
+    dset, time, cum_hour  = read_dataset(variables=['RAIN_GSP', 'RAIN_CON',
+                                                    'SNOW_GSP', 'SNOW_CON',
+                                                    'PMSL', 'CLCT'])
 
-    time = pd.to_datetime(dset.time.values)
     increments = (time[1:] - time[:-1]) / pd.Timedelta('1 hour') 
-    cum_hour=np.array((time-time[0]) / pd.Timedelta('1 hour')).astype("int")
 
     # Compute rain and snow 
     rain_acc = dset['RAIN_GSP'] + dset['RAIN_CON']
     snow_acc = dset['SNOW_GSP'] + dset['SNOW_CON']
-    rain = rain_acc.diff(dim='time', n=1)
-    snow = snow_acc.diff(dim='time', n=1)
-    # Unfortunately we have to convert to Numpy array 
-    rain = rain.values / increments.values[:, np.newaxis]
-    snow = snow.values / increments.values[:, np.newaxis]
-    rain = np.insert(arr=rain, obj=0, axis=0, values=np.zeros_like(rain[0]))
-    snow = np.insert(arr=snow, obj=0, axis=0, values=np.zeros_like(snow[0]))
+    rain = rain_acc.differentiate(coord="time", datetime_unit="h").load()
+    snow = snow_acc.differentiate(coord="time", datetime_unit="h").load()
 
-    mslp = dset['prmsl'].metpy.unit_array.to('hPa')
-    clouds = dset['CLCT'].values
+    del rain_acc
+    del snow_acc
 
-    lon, lat = get_coordinates(dset)
+    mslp = dset['prmsl'].load()
+    mslp.metpy.convert_units('hPa')
+    clouds = dset['CLCT'].load()
+
+    lon, lat = get_coordinates()
 
     levels_rain   = (0.1, 0.2, 0.4, 0.6, 0.8, 1., 1.5, 2., 2.5, 3.0, 4.,
                      5, 7.5, 10., 15., 20., 30., 40., 60., 80., 100., 120.)
@@ -70,8 +66,10 @@ def main():
 
     for projection in projections:# This works regardless if projections is either single value or array
         fig = plt.figure(figsize=(figsize_x, figsize_y))
+        
         ax  = plt.gca()
-        m, x, y =get_projection(lon, lat, projection)
+        
+        m, x, y = get_projection(lon, lat, projection)
 
         m.drawmapboundary(fill_color='whitesmoke')
         m.fillcontinents(color='lightgray',lake_color='whitesmoke', zorder=1)

@@ -1,18 +1,27 @@
-#!/bin/bash
+#!/usr/local/bin/bash
+
+# Folder to be used to download and process data
+export MODEL_DATA_FOLDER="/Users/thd5tt/Downloads/temp/"
+export HOME_FOLDER=$(pwd)
+export N_CONCUR_PROCESSES=4 
+export NCFTP_BOOKMARK="altervista"
+DATA_DOWNLOAD=true
+DATA_PLOTTING=false
+DATA_UPLOAD=false
 
 ##### LOAD functions to download model data
-. ~/functions_download_dwd.sh
+. ./functions_download_dwd.sh
 export SHELL=$(type -p bash)
-########################################### 
+# We need to open many files at the same time
+ulimit -Sn 4096
+# 
+source ~/.bash_profile
+# acivate our environment 
+#conda activate nwp-py2
+###########################################
 
-##### LOAD environmental variables ########
-export cdo=/sw/stretch-x64/cdo/cdo-1.9.6-gccsys/bin/cdo
-export python=/home/mpim/m300382/.conda/envs/my_base/bin/python
-export parallel=/home/mpim/m300382/.conda/envs/my_base/bin/parallel
-########################################### 
-
-export QT_QPA_PLATFORM=offscreen # Needed to avoid errors when using Python without display
-source /sw/stretch-x64/conda/anaconda3-5.3.0-python-3.7/bin/activate my_base
+mkdir -p ${MODEL_DATA_FOLDER}world
+mkdir -p ${MODEL_DATA_FOLDER}us
 
 ##### COMPUTE the date variables to determine the run
 export year=`date +"%Y"`
@@ -37,86 +46,97 @@ then
 fi
 
 export run
-########################################### 
-
-cd /scratch/local1/m300382/icon_globe/
-
-# remove here the file so it remains until next time to be used
-rm *.nc
-cp /home/mpim/m300382/icon_globe/*.py ./
-
-##### DOWNLOAD model data #################
-# 2-D variables
-variables=("PMSL" "CLCT" "TOT_PREC" "VMAX_10M" "RAIN_CON" "RAIN_GSP" "SNOW_CON" "SNOW_GSP" "T_2M" "TD_2M" "WW")
-${parallel} -j 8 download_merge_2d_variable_icon_globe ::: "${variables[@]}"
-
-# 3-D variables on pressure levels
-variables=("T" "FI" "RELHUM" "U" "V")
-${parallel} -j 8 download_merge_3d_variable_icon_globe ::: "${variables[@]}"
 ###########################################
 
-##### PROCESS model data #################
-rm *.grib2
-${cdo} setgrid,/home/mpim/m300382/icon_globe/icon_grid_0026_R03B07_G.nc -merge icon_global_* ICON_${year}${month}${day}${run}.nc
-# plotting hourly data takes too much time, the following interpolation takes approx 1 min
-${cdo} select,hour=0,3,6,9,12,15,18,21 ICON_${year}${month}${day}${run}.nc ICON_${year}${month}${day}${run}_3h.nc
-rm icon_global_*
-#rm *.grib2
-#rm ICON_${year}${month}${day}${run}.nc 
+# Move to the data folder to do processing
+cd ${MODEL_DATA_FOLDER} || { echo 'Cannot change to DATA folder' ; exit 1; }
 
-# optional remapping
-# ${cdo} -O -r remapnn,grid.cdo ICON_${year}${month}${day}${run}.nc ICON_${year}${month}${day}${run}_remap.nc
-# rm ICON_${year}${month}${day}${run}.nc
-###########################################
+# SECTION 1 - DATA DOWNLOAD ############################################################
 
-##### PLOTS results ######################
-${python} plot_meteogram.py Hamburg Storrs Milan Pisa Toulouse Rome Naples Utrecht Sassari Palermo Cagliari
+if [ "$DATA_DOWNLOAD" = true ]; then
+	# Remove older files
+	#rm ${MODEL_DATA_FOLDER}*.nc
+	rm ${MODEL_DATA_FOLDER}*.grib2
 
-ncftpput -R -v altervista icon_globe/meteograms meteogram_*
-#
-# Parallelize the plotting script using GNU Parallel
-scripts=("plot_jetstream.py" "plot_rain_acc.py" "plot_clouds.py" "plot_geop_500.py" "plot_mslp_wind.py" "plot_thetae.py")
-projections=("nh" "us")
+	# Invariant
+	download_invariant_icon_globe
 
-${parallel} -j 4 ${python} ::: "${scripts[@]}" ::: "${projections[@]}"
-###########################################
+	#2-D variables
+	variables=("PMSL" "CLCT" "TOT_PREC" "VMAX_10M" "RAIN_CON"\
+				 "RAIN_GSP" "SNOW_CON" "SNOW_GSP" "T_2M" "TD_2M" "WW")
+	parallel -j ${N_CONCUR_PROCESSES} download_merge_2d_variable_icon_globe ::: "${variables[@]}"
 
-##### UPLOAD figures to FTP server ########
-ncftpput -R -v altervista icon_globe/thetae_850 thetae_850_*
-ncftpput -R -v altervista icon_globe/gph_500 gph_500_*
-ncftpput -R -v altervista icon_globe/winds10m winds10m_*
-ncftpput -R -v altervista icon_globe/precip_clouds precip_clouds_*
-ncftpput -R -v altervista icon_globe/winds_jet winds_jet_*
-ncftpput -R -v altervista icon_globe/precip_acc precip_acc_*
+	#3-D variables on pressure levels
+	variables=("T" "FI" "RELHUM" "U" "V")
+	parallel -j ${N_CONCUR_PROCESSES} download_merge_3d_variable_icon_globe ::: "${variables[@]}"
 
-ncftpput -R -v altervista icon_us/thetae_850 us/thetae_850_*
-ncftpput -R -v altervista icon_us/gph_500 us/gph_500_*
-ncftpput -R -v altervista icon_us/precip_clouds us/precip_clouds_*
-ncftpput -R -v altervista icon_us/precip_acc us/precip_acc_*
-ncftpput -R -v altervista icon_us/winds_jet us/winds_jet_*
-ncftpput -R -v altervista icon_us/winds10m us/winds10m_*
+	# optional use only 3 hourly data 
+	# cdo select,hour=0,3,6,9,12,15,18,21 ICON_${year}${month}${day}${run}.nc ICON_${year}${month}${day}${run}_3h.nc
+	# rm icon_global_* 
+	# optional remapping
+	# cdo -O -r remapnn,grid.cdo ICON_${year}${month}${day}${run}.nc ICON_${year}${month}${day}${run}_remap.nc
 
-scripts=("plot_jetstream.py" "plot_rain_acc.py" "plot_geop_500.py" "plot_mslp_wind.py" "plot_thetae.py")
-${parallel} -j 4 ${python} ::: "${scripts[@]}" ::: "world"
+fi 
 
-ncftpput -R -v altervista icon_world/thetae_850 world/thetae_850_*
-#ncftpput -R -v altervista icon_world/precip_clouds world/precip_clouds_*
-ncftpput -R -v altervista icon_world/winds_jet world/winds_jet_*
-ncftpput -R -v altervista icon_world/winds10m world/winds10m_*
-ncftpput -R -v altervista icon_world/precip_acc world/precip_acc_*
-ncftpput -R -v altervista icon_world/gph_500 world/gph_500_*
-###########################################
+# SECTION 2 - DATA PLOTTING ############################################################
 
-####
-#scp ICON_${year}${month}${day}${run}_3h.nc m300382@mistral.dkrz.de:/scratch/m/m300382/
-####
+if [ "$DATA_PLOTTING" = true ]; then
+	python --version
+	cp ${HOME_FOLDER}/plotting/*.py ${MODEL_DATA_FOLDER}
 
-# #Remove images locally
-rm *.png
-rm world/*.png
-rm us/*.png
+	export QT_QPA_PLATFORM=offscreen # Needed to avoid errors when using Python without display
 
-rm *.gif
-rm *.py
+	python plot_meteogram.py Hamburg Storrs Milan Pisa Toulouse Rome Naples Utrecht Sassari Palermo Cagliari
+
+	scripts=("plot_jetstream.py" "plot_rain_acc.py" "plot_clouds.py" "plot_geop_500.py"\
+			 "plot_mslp_wind.py" "plot_thetae.py")
+
+	projections=("nh" "us")
+	parallel -j ${N_CONCUR_PROCESSES} python ::: "${scripts[@]}" ::: "${projections[@]}"
+
+	# scripts=("plot_jetstream.py" "plot_rain_acc.py" "plot_geop_500.py" "plot_mslp_wind.py" "plot_thetae.py")
+	# parallel -j ${N_CONCUR_PROCESSES} python ::: "${scripts[@]}" ::: "world"
+fi
+
+
+# SECTION 3 - IMAGES UPLOAD ############################################################
+# Use ncftpbookmarks to add a new FTP server with credentials
+if [ "$DATA_UPLOAD" = true ]; then
+	# First upload meteograms
+	ncftpput -R -v ${NCFTP_BOOKMARK} icon_globe/meteograms meteogram_*
+	#
+	# Then upload the other pictures
+	#
+	images_output=("thetae_850" "gph_500" "winds10m" "precip_clouds" "winds_jet" "precip_acc")
+
+	# suffix for naming
+	projections_output=("" "us/")
+	# remote folder on server
+	projections_output_folder=("icon_globe" "icon_us")
+
+	# Create a lisf of all the images to upload 
+	upload_elements=()
+	for i in "${!projections_output[@]}"; do
+		for j in "${images_output[@]}"; do
+			upload_elements+=("${projections_output_folder[$i]}/${j} ./${projections_output[$i]}${j}_*")
+		done
+	done
+
+	# Finally upload the images 
+	for k in "${upload_elements[@]}"; do
+		ncftpput -R -v ${NCFTP_BOOKMARK} ${k}
+	done
+
+fi 
+
+# SECTION 4 - CLEANING ############################################################
+
+#Remove images locally
+rm ${MODEL_DATA_FOLDER}*.png
+rm ${MODEL_DATA_FOLDER}us/*.png
+rm ${MODEL_DATA_FOLDER}world/*.png
+rm ${MODEL_DATA_FOLDER}*.py
+
+############################################################
 
 cd -
