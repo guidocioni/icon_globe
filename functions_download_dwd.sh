@@ -27,7 +27,14 @@ download_merge_3d_variable_icon_globe()
 {
 	# Parallelize this part by getting a file list and dividing into chunks ##############
 	filename="icon_global_icosahedral_pressure-level_${year}${month}${day}${run}_*_${1}.grib2"
-	wget -b -r -nH -np -nv -nd --reject "index.html*" --cut-dirs=3 -A "${filename}.bz2" "https://opendata.dwd.de/weather/nwp/icon/grib/${run}/${1,,}/"
+	#
+	filenames="icon_global_icosahedral_pressure-level_${year}${month}${day}${run}_0[0-4][0-9]_*_${1}.grib2"
+	wget -b -r -nH -np -nv -nd --reject "index.html*" --cut-dirs=3 -A "${filenames}.bz2" "https://opendata.dwd.de/weather/nwp/icon/grib/${run}/${1,,}/"
+	filenames="icon_global_icosahedral_pressure-level_${year}${month}${day}${run}_0[5-9][0-9]_*_${1}.grib2"
+	wget -b -r -nH -np -nv -nd --reject "index.html*" --cut-dirs=3 -A "${filenames}.bz2" "https://opendata.dwd.de/weather/nwp/icon/grib/${run}/${1,,}/"
+	filenames="icon_global_icosahedral_pressure-level_${year}${month}${day}${run}_1[0-9][0-9]_*_${1}.grib2"
+	wget -b -r -nH -np -nv -nd --reject "index.html*" --cut-dirs=3 -A "${filenames}.bz2" "https://opendata.dwd.de/weather/nwp/icon/grib/${run}/${1,,}/"
+	#
 	parallelized_extraction ${filename}
 	#######################
 	for level in "300" "500" "700" "850" "950" "1000" ; do
