@@ -1,0 +1,15 @@
+MAILTO=""
+SCRATCHDIR=/folder/for/processing
+#
+# m h  dom mon dow   command
+## Run 00 ###
+20    6      *     *     * ${HOME}/icon_globe/copy_data.run > ${SCRATCHDIR}/icon_globe/`date +\%Y\%m\%d\%H\%M\%S`-cron.log 2>&1
+#############
+## Run 06 ###
+05    12     *     *     * ${HOME}/icon_globe/copy_data.run > ${SCRATCHDIR}/icon_globe/`date +\%Y\%m\%d\%H\%M\%S`-cron.log 2>&1
+#############
+## Run 12 ###
+01    18     *     *     * ${HOME}/icon_globe/copy_data.run > ${SCRATCHDIR}/icon_globe/`date +\%Y\%m\%d\%H\%M\%S`-cron.log 2>&1
+#############
+## Run 18 ###
+45     23     *     *    * ${HOME}/icon_globe/copy_data.run > ${SCRATCHDIR}/icon_globe/`date +\%Y\%m\%d\%H\%M\%S`-cron.log 2>&1
