@@ -1,7 +1,9 @@
 #!/usr/local/bin/bash
 
 # Folder to be used to download and process data
-export MODEL_DATA_FOLDER="/Users/thd5tt/Downloads/temp/"
+# export MODEL_DATA_FOLDER="/tmp/icon-globe/"
+export MODEL_DATA_FOLDER="/Volumes/Data/temp/icon-globe/"
+
 export HOME_FOLDER=$(pwd)
 export N_CONCUR_PROCESSES=4 
 export NCFTP_BOOKMARK="altervista"
@@ -22,6 +24,8 @@ source ~/.bash_profile
 
 mkdir -p ${MODEL_DATA_FOLDER}world
 mkdir -p ${MODEL_DATA_FOLDER}us
+
+# This also create MODEL_DATA_FOLDER if it does not exist
 
 ##### COMPUTE the date variables to determine the run
 export year=`date +"%Y"`
@@ -55,7 +59,7 @@ cd ${MODEL_DATA_FOLDER} || { echo 'Cannot change to DATA folder' ; exit 1; }
 
 if [ "$DATA_DOWNLOAD" = true ]; then
 	# Remove older files
-	#rm ${MODEL_DATA_FOLDER}*.nc
+	rm ${MODEL_DATA_FOLDER}*.nc
 	rm ${MODEL_DATA_FOLDER}*.grib2
 
 	# Invariant
@@ -64,18 +68,17 @@ if [ "$DATA_DOWNLOAD" = true ]; then
 	#2-D variables
 	variables=("PMSL" "CLCT" "TOT_PREC" "VMAX_10M" "RAIN_CON"\
 				 "RAIN_GSP" "SNOW_CON" "SNOW_GSP" "T_2M" "TD_2M" "WW")
-	parallel -j ${N_CONCUR_PROCESSES} download_merge_2d_variable_icon_globe ::: "${variables[@]}"
+	parallel -j ${N_CONCUR_PROCESSES} --delay 1 download_merge_2d_variable_icon_globe ::: "${variables[@]}"
 
 	#3-D variables on pressure levels
 	variables=("T" "FI" "RELHUM" "U" "V")
-	parallel -j ${N_CONCUR_PROCESSES} download_merge_3d_variable_icon_globe ::: "${variables[@]}"
+	parallel -j ${N_CONCUR_PROCESSES} --delay 2 download_merge_3d_variable_icon_globe ::: "${variables[@]}"
 
 	# optional use only 3 hourly data 
 	# cdo select,hour=0,3,6,9,12,15,18,21 ICON_${year}${month}${day}${run}.nc ICON_${year}${month}${day}${run}_3h.nc
 	# rm icon_global_* 
 	# optional remapping
 	# cdo -O -r remapnn,grid.cdo ICON_${year}${month}${day}${run}.nc ICON_${year}${month}${day}${run}_remap.nc
-
 fi 
 
 # SECTION 2 - DATA PLOTTING ############################################################
@@ -94,6 +97,7 @@ if [ "$DATA_PLOTTING" = true ]; then
 	projections=("nh" "us")
 	parallel -j ${N_CONCUR_PROCESSES} python ::: "${scripts[@]}" ::: "${projections[@]}"
 
+	# now plot for the whole world (take a lot of time)
 	# scripts=("plot_jetstream.py" "plot_rain_acc.py" "plot_geop_500.py" "plot_mslp_wind.py" "plot_thetae.py")
 	# parallel -j ${N_CONCUR_PROCESSES} python ::: "${scripts[@]}" ::: "world"
 fi

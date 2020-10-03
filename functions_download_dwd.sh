@@ -7,6 +7,7 @@ listurls() {
 		-A $filename.bz2 $url 2>&1\
 		| grep -Eo '(http|https)://(.*).bz2'
 }
+export -f listurls
 #
 get_and_extract_one() {
   url="$1"
@@ -30,25 +31,12 @@ download_merge_3d_variable_icon_globe()
 	# Parallelize this part by getting a file list and dividing into chunks ##############
 	filename="icon_global_icosahedral_pressure-level_${year}${month}${day}${run}_*_${1}.grib2"
 	url="https://opendata.dwd.de/weather/nwp/icon/grib/${run}/${1,,}/"
-	listurls $filename $url | parallel get_and_extract_one {}
+	listurls $filename $url | grep -Eo '(.*)_(300|500|700|850|1000)_(.*)' | parallel get_and_extract_one {}
 	#######################
-	# To select only some of the levels
-	# for level in "300" "500" "700" "850" "950" "1000" ; do
-	# 	(
-	# 	 cdo -f nc copy -mergetime icon_global_icosahedral_pressure-level_${year}${month}${day}${run}_*_${level}_${1}.grib2 icon_global_icosahedral_pressure-level_${year}${month}${day}${run}_${level}_${1}.nc
-	# 	) &
-	# done
-	# wait
-	# ########
-	# # First sort files numerically otherwise the levels get screwed up
-	# files_to_merge=`ls -v icon_global_icosahedral_pressure-level_${year}${month}${day}${run}_*_${1}.nc` 
-	# cdo merge ${files_to_merge} ${1}_${year}${month}${day}${run}_global.nc
-	# rm icon_global_icosahedral_pressure-level_${year}${month}${day}${run}_*_${1}.nc
 	cdo merge ${filename} ${1}_${year}${month}${day}${run}_global.grib2
 	rm ${filename}
 	cdo -f nc copy ${1}_${year}${month}${day}${run}_global.grib2 ${1}_${year}${month}${day}${run}_global.nc
 	rm ${1}_${year}${month}${day}${run}_global.grib2
-	rm ${filename}
 }
 export -f download_merge_3d_variable_icon_globe
 ################################################
