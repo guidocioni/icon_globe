@@ -65,20 +65,20 @@ if [ "$DATA_DOWNLOAD" = true ]; then
 	echo "icon-globe: Starting downloading of data - `date`"
 	echo "-----------------------------------------------"
 	# Remove older files
-	rm ${MODEL_DATA_FOLDER}*.nc
+	# rm ${MODEL_DATA_FOLDER}*.nc
 	rm ${MODEL_DATA_FOLDER}*.grib2
 
 	# Invariant
 	download_invariant_icon_globe
 
 	#2-D variables
-	variables=("PMSL" "CLCT" "TOT_PREC" "VMAX_10M" "RAIN_CON"\
-				 "RAIN_GSP" "SNOW_CON" "SNOW_GSP" "T_2M" "TD_2M" "WW")
-	parallel -j 10 --delay 1 download_merge_2d_variable_icon_globe ::: "${variables[@]}"
+	# variables=("PMSL" "CLCT" "TOT_PREC" "VMAX_10M" "RAIN_CON"\
+	# 			 "RAIN_GSP" "SNOW_CON" "SNOW_GSP" "T_2M" "TD_2M" "WW")
+	# parallel -j 8 --delay 1 download_merge_2d_variable_icon_globe ::: "${variables[@]}"
 
 	#3-D variables on pressure levels
 	variables=("T" "FI" "RELHUM" "U" "V")
-	parallel -j 10 --delay 2 download_merge_3d_variable_icon_globe ::: "${variables[@]}"
+	parallel -j 8 --delay 2 download_merge_3d_variable_icon_globe ::: "${variables[@]}"
 
 	# optional use only 3 hourly data 
 	# cdo select,hour=0,3,6,9,12,15,18,21 ICON_${year}${month}${day}${run}.nc ICON_${year}${month}${day}${run}_3h.nc
@@ -154,7 +154,7 @@ rm ${MODEL_DATA_FOLDER}*.py
 
 echo "-----------------------------------------------"
 echo "icon-globe: Finished cleaning up - `date`"
-echo "----------------------------------------------_"
+echo "-----------------------------------------------"
 
 ############################################################
 

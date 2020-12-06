@@ -218,8 +218,8 @@ def get_coordinates():
     files = glob(folder+'invariant_*_global.nc')
     dset = xr.open_dataset(files[0]).squeeze()
 
-    longitude = dset['CLON'].values
-    latitude = dset['CLAT'].values
+    longitude = dset['tlon'].values
+    latitude = dset['tlat'].values
 
     return(longitude, latitude)
 

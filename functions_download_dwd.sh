@@ -22,12 +22,13 @@ export -f get_and_extract_one
 download_merge_2d_variable_icon_globe()
 {
 	filename="icon_global_icosahedral_single-level_${year}${month}${day}${run}_*_${1}.grib2"
-	filename_grep="icon_global_icosahedral_single-level_${year}${month}${day}${run}_(.*)_${1}.grib2"
+	filename_grep="icon_global_icosahedral_single-level_${year}${month}${day}${run}_(.*)_${1}.grib2.bz2"
 	url="https://opendata.dwd.de/weather/nwp/icon/grib/${run}/${1,,}/"
 	echo "folder: ${url}"
 	echo "files: ${filename}"
 	if [ ! -f "${1}_${year}${month}${day}${run}_global.nc" ]; then
-		listurls $filename $url | parallel -j 10 get_and_extract_one {}
+		listurls $filename_grep $url | parallel -j 10 get_and_extract_one {}
+		find ${filename} -empty -type f -delete # Remove empty files
 		cdo -f nc copy -mergetime ${filename} ${1}_${year}${month}${day}${run}_global.nc
 		rm ${filename}
 	fi
@@ -37,10 +38,11 @@ export -f download_merge_2d_variable_icon_globe
 download_merge_3d_variable_icon_globe()
 {
 	filename="icon_global_icosahedral_pressure-level_${year}${month}${day}${run}_*_${1}.grib2"
-	filename_grep="icon_global_icosahedral_pressure-level_${year}${month}${day}${run}_(.*)_(1000|900|850|700|600|500|300|250|150|50)_${1}.grib2"
+	filename_grep="icon_global_icosahedral_pressure-level_${year}${month}${day}${run}_(.*)_(1000|900|850|700|600|500|300|250|150|50)_${1}.grib2.bz2"
 	url="https://opendata.dwd.de/weather/nwp/icon/grib/${run}/${1,,}/"
 	if [ ! -f "${1}_${year}${month}${day}${run}_global.nc" ]; then
-		listurls $filename $url | parallel -j 10 get_and_extract_one {}
+		listurls $filename_grep $url | parallel -j 10 get_and_extract_one {}
+		find ${filename} -empty -type f -delete # Remove empty files
 		cdo merge ${filename} ${1}_${year}${month}${day}${run}_global.grib2
 		rm ${filename}
 		cdo -f nc copy ${1}_${year}${month}${day}${run}_global.grib2 ${1}_${year}${month}${day}${run}_global.nc
@@ -68,10 +70,10 @@ export -f download_invariant_icon_globe
 download_merge_soil_variable_icon_globe()
 {
 	filename="icon_global_icosahedral_soil-level_${year}${month}${day}${run}_*_3_${1}.grib2"
-	filename_grep="icon_global_icosahedral_soil-level_${year}${month}${day}${run}_(.*)_3_${1}.grib2"
+	filename_grep="icon_global_icosahedral_soil-level_${year}${month}${day}${run}_(.*)_3_${1}.grib2.bz2"
 	url="https://opendata.dwd.de/weather/nwp/icon/grib/${run}/${1,,}/"
 	if [ ! -f "${1}_${year}${month}${day}${run}_global.nc" ]; then
-		listurls $filename $url | parallel -j 10 get_and_extract_one {}
+		listurls $filename_grep $url | parallel -j 10 get_and_extract_one {}
 		cdo -f nc copy -mergetime ${filename} ${1}_${year}${month}${day}${run}_global.nc
 		rm ${filename}
 	fi
