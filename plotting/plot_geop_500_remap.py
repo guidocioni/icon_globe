@@ -31,7 +31,7 @@ def main():
     """In the main function we basically read the files and prepare the variables to be plotted.
     This is not included in utils.py as it can change from case to case."""
     dset = read_dataset(variables=['T', 'FI'], level=[50000, 85000],
-                        projection=projection)
+                        projection=projection, remapped=True)
 
     levels_temp = np.arange(-34., 36., 2.)
     levels_gph = np.arange(4700., 6000., 70.)
@@ -40,7 +40,7 @@ def main():
 
     _ = plt.figure(figsize=(figsize_x, figsize_y))
     ax = plt.gca()
-    _, x, y, mask = get_projection(dset, projection)
+    _, x, y, mask = get_projection(dset, projection, remapped=True)
     # Subset dataset only on the area
     dset = dset.where(mask, drop=True)
     # and then compute what we need
@@ -74,14 +74,14 @@ def plot_files(dss, **args):
         # Build the name of the output image
         filename = subfolder_images[projection] + '/' + variable_name + '_%s.png' % cum_hour
 
-        cs = args['ax'].tricontourf(args['x'],
+        cs = args['ax'].contourf(args['x'],
                                     args['y'],
                                     data['t'],
                                     extend='both',
                                     cmap=args['cmap'],
                                     levels=args['levels_temp'])
 
-        css = args['ax'].tricontour(args['x'], args['y'],
+        css = args['ax'].contour(args['x'], args['y'],
                                  data['t'], colors='gray',
                                  levels=np.arange(-32., 34., 4.),
                                  linestyles='solid',
@@ -89,7 +89,7 @@ def plot_files(dss, **args):
 
         css.collections[8].set_linewidth(1.5)
 
-        c = args['ax'].tricontour(args['x'], args['y'],
+        c = args['ax'].contour(args['x'], args['y'],
                                   data['geop'], levels=args['levels_gph'],
                                   colors='white', linewidths=1.)
 
@@ -99,6 +99,12 @@ def plot_files(dss, **args):
             css, css.levels, inline=True, fmt='%4.0f', fontsize=7)
         plt.setp(labels2, path_effects=[
         patheffects.withStroke(linewidth=0.5, foreground="w")])
+
+
+        maxlabels = plot_maxmin_points(args['ax'], args['x'], args['y'], data['geop'],
+                                        'max', 160, symbol='H', color='royalblue', random=True)
+        minlabels = plot_maxmin_points(args['ax'], args['x'], args['y'], data['geop'],
+                                        'min', 160, symbol='L', color='coral', random=True)
 
 
         an_fc = annotation_forecast(args['ax'], time)
@@ -114,7 +120,7 @@ def plot_files(dss, **args):
         else:
             plt.savefig(filename, **options_savefig)        
 
-        remove_collections([c, cs, css, labels, labels2, an_fc, an_var, an_run])
+        remove_collections([c, cs, css, labels, labels2, an_fc, an_var, an_run, maxlabels, minlabels])
 
         first = False 
 

@@ -30,7 +30,8 @@ else:
 def main():
     """In the main function we basically read the files and prepare the variables to be plotted.
     This is not included in utils.py as it can change from case to case."""
-    dset = read_dataset(variables=['T', 'RELHUM', 'PMSL'], level=85000)
+    dset = read_dataset(variables=['T', 'RELHUM', 'PMSL'], level=85000, projection=projection)
+    dset['prmsl'].metpy.convert_units('hPa')
 
     levels_thetae = np.arange(-25., 75., 1.)
 
@@ -38,10 +39,11 @@ def main():
     ax = plt.gca()
     m, x, y, mask = get_projection(dset, projection)
     # Subset dataset only on the area
-    dset = dset[dict(ncells=mask)]
-    dset = dset.load()
-    dset['prmsl'].metpy.convert_units('hPa')
+    dset = dset.where(mask, drop=True)
+
     dset = compute_thetae(dset)
+
+    dset = dset.drop(['lon', 'lat', 't', 'r']).load()
 
     levels_mslp = np.arange(dset['prmsl'].min().astype("int"),
         dset['prmsl'].max().astype("int"), 7.)

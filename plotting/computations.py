@@ -16,7 +16,10 @@ def compute_geopot_height(dset, zvar='z', level=None):
                               'units': gph.units},
                        name='geop')
 
-    return xr.merge([dset, gph])
+    out = xr.merge([dset, gph])
+    out.attrs = dset.attrs
+
+    return out
 
 
 def compute_thetae(dset, tvar='t', rvar='r'):
@@ -32,7 +35,10 @@ def compute_thetae(dset, tvar='t', rvar='r'):
                                   'units': theta_e.units},
                             name='theta_e')
 
-    return xr.merge([dset, theta_e])
+    out = xr.merge([dset, theta_e])
+    out.attrs = dset.attrs
+
+    return out
 
 
 def compute_snow_change(dset, snowvar='sde'):
@@ -46,7 +52,10 @@ def compute_snow_change(dset, snowvar='sde'):
                                   'units': hsnow_acc.units},
                             name='snow_increment')
 
-    return xr.merge([dset, hsnow])
+    out = xr.merge([dset, hsnow])
+    out.attrs = dset.attrs
+
+    return out
 
 
 def compute_rain_snow_change(dset):
@@ -65,7 +74,10 @@ def compute_rain_snow_change(dset):
     rain = xr.DataArray(rain, name='rain_increment')
     snow = xr.DataArray(snow, name='snow_increment')
 
-    return xr.merge([dset, rain, snow])
+    out = xr.merge([dset, rain, snow])
+    out.attrs = dset.attrs
+
+    return out
 
 
 def compute_wind_speed(dset, uvar='u', vvar='v'):
@@ -75,7 +87,10 @@ def compute_wind_speed(dset, uvar='u', vvar='v'):
                                   'units': wind.units},
                                   name='wind_speed')
 
-    return xr.merge([dset, wind])
+    out = xr.merge([dset, wind])
+    out.attrs = dset.attrs
+
+    return out
 
 
 def compute_rate(dset):
@@ -89,13 +104,16 @@ def compute_rate(dset):
     except:
         snow_acc = dset['SNOW_GSP']
 
-    rain = rain_acc.differentiate(coord="time", datetime_unit="h")
-    snow = snow_acc.differentiate(coord="time", datetime_unit="h")
+    rain = rain_acc.load().differentiate(coord="time", datetime_unit="h")
+    snow = snow_acc.load().differentiate(coord="time", datetime_unit="h")
 
     rain = xr.DataArray(rain, name='rain_rate')
     snow = xr.DataArray(snow, name='snow_rate')
 
-    return xr.merge([dset, rain, snow])
+    out = xr.merge([dset, rain, snow])
+    out.attrs = dset.attrs
+
+    return out
 
 
 def compute_soil_moisture_sat(dset, projection):
@@ -122,4 +140,7 @@ def compute_soil_moisture_sat(dset, projection):
     # Fix weird points with ice/rock
     w_so_sat = w_so_sat.where(w_so != 0, 0.)
 
-    return xr.merge([dset, w_so_sat])
+    out = xr.merge([dset, w_so_sat])
+    out.attrs = dset.attrs
+
+    return out

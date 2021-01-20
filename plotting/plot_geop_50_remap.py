@@ -14,7 +14,7 @@ if not debug:
 import matplotlib.pyplot as plt
 
 # The one employed for the figure name when exported 
-variable_name = 'gph_500'
+variable_name = 'gph_50'
 
 print_message('Starting script to plot '+variable_name)
 
@@ -30,23 +30,22 @@ else:
 def main():
     """In the main function we basically read the files and prepare the variables to be plotted.
     This is not included in utils.py as it can change from case to case."""
-    dset = read_dataset(variables=['T', 'FI'], level=[50000, 85000],
-                        projection=projection)
+    dset = read_dataset(variables=['T', 'FI'], level=[5000],
+                        projection=projection, remapped=True)
 
-    levels_temp = np.arange(-34., 36., 2.)
-    levels_gph = np.arange(4700., 6000., 70.)
+    levels_temp = np.arange(-86, -18, 1)
+    levels_gph = np.arange(1970., 2050., 25.)
 
     cmap = get_colormap('temp_meteociel')
 
     _ = plt.figure(figsize=(figsize_x, figsize_y))
     ax = plt.gca()
-    _, x, y, mask = get_projection(dset, projection)
+    _, x, y, mask = get_projection(dset, projection, remapped=True)
     # Subset dataset only on the area
     dset = dset.where(mask, drop=True)
     # and then compute what we need
-    dset = compute_geopot_height(dset, zvar='z', level=50000)
-    dset = dset.sel(plev=85000, method='nearest')
-    dset = dset.drop(['z', 'lon', 'lat']).load()
+    dset = compute_geopot_height(dset, zvar='z')
+    dset = dset.drop(['z', 'lon', 'lat']).squeeze().load()
 
     # All the arguments that need to be passed to the plotting function
     args=dict(x=x, y=y, ax=ax,
@@ -74,22 +73,21 @@ def plot_files(dss, **args):
         # Build the name of the output image
         filename = subfolder_images[projection] + '/' + variable_name + '_%s.png' % cum_hour
 
-        cs = args['ax'].tricontourf(args['x'],
+        cs = args['ax'].contourf(args['x'],
                                     args['y'],
                                     data['t'],
                                     extend='both',
                                     cmap=args['cmap'],
                                     levels=args['levels_temp'])
 
-        css = args['ax'].tricontour(args['x'], args['y'],
+        css = args['ax'].contour(args['x'], args['y'],
                                  data['t'], colors='gray',
-                                 levels=np.arange(-32., 34., 4.),
+                                 levels=args['levels_temp'][::4],
                                  linestyles='solid',
                                  linewidths=0.3)
 
-        css.collections[8].set_linewidth(1.5)
 
-        c = args['ax'].tricontour(args['x'], args['y'],
+        c = args['ax'].contour(args['x'], args['y'],
                                   data['geop'], levels=args['levels_gph'],
                                   colors='white', linewidths=1.)
 
@@ -101,8 +99,14 @@ def plot_files(dss, **args):
         patheffects.withStroke(linewidth=0.5, foreground="w")])
 
 
+        maxlabels = plot_maxmin_points(args['ax'], args['x'], args['y'], data['geop'],
+                                        'max', 300, symbol='H', color='royalblue', random=True)
+        minlabels = plot_maxmin_points(args['ax'], args['x'], args['y'], data['geop'],
+                                        'min', 300, symbol='L', color='coral', random=True)
+
+
         an_fc = annotation_forecast(args['ax'], time)
-        an_var = annotation(args['ax'], 'Geopotential height @500hPa [m] and temperature @850hPa [C]',
+        an_var = annotation(args['ax'], 'Geopotential height and temperature @50hPa [m]',
             loc='lower left', fontsize=6)
         an_run = annotation_run(args['ax'], run)
 
@@ -114,7 +118,7 @@ def plot_files(dss, **args):
         else:
             plt.savefig(filename, **options_savefig)        
 
-        remove_collections([c, cs, css, labels, labels2, an_fc, an_var, an_run])
+        remove_collections([c, cs, css, labels, labels2, an_fc, an_var, an_run, maxlabels, minlabels])
 
         first = False 
 

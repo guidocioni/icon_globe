@@ -32,7 +32,7 @@ def main():
     This is not included in utils.py as it can change from case to case."""
     dset = read_dataset(variables=['RAIN_GSP', 'RAIN_CON',
                                     'SNOW_GSP', 'SNOW_CON',
-                                    'PMSL', 'CLCT'], projection=projection)
+                                    'PMSL', 'CLCT'], projection=projection, remapped=True)
 
     levels_rain   = (0.1, 0.2, 0.4, 0.6, 0.8, 1., 1.5, 2., 2.5, 3.0, 4.,
                      5, 7.5, 10., 15., 20., 30., 40., 60., 80., 100., 120.)
@@ -46,7 +46,7 @@ def main():
 
     _ = plt.figure(figsize=(figsize_x, figsize_y))
     ax = plt.gca()
-    m, x, y, mask = get_projection(dset, projection)
+    m, x, y, mask = get_projection(dset, projection, remapped=True)
     # Subset dataset only on the area
     dset = dset.where(mask, drop=True)
     m.drawmapboundary(fill_color='whitesmoke')
@@ -84,22 +84,27 @@ def plot_files(dss, **args):
         # Build the name of the output image
         filename = subfolder_images[projection] + '/' + variable_name + '_%s.png' % cum_hour
 
-        cs_rain = args['ax'].tricontourf(args['x'], args['y'], data['rain_rate'],
+        cs_rain = args['ax'].contourf(args['x'], args['y'], data['rain_rate'],
                          extend='max', cmap=args['cmap_rain'], norm=args['norm_rain'],
                          levels=args['levels_rain'], zorder=4, antialiased=True)
-        cs_snow = args['ax'].tricontourf(args['x'], args['y'], data['snow_rate'],
+        cs_snow = args['ax'].contourf(args['x'], args['y'], data['snow_rate'],
                          extend='max', cmap=args['cmap_snow'], norm=args['norm_snow'],
                          levels=args['levels_snow'], zorder=5, antialiased=True)
-        cs_clouds = args['ax'].tricontourf(args['x'], args['y'], data['CLCT'],
+        cs_clouds = args['ax'].contourf(args['x'], args['y'], data['CLCT'],
                          extend='max', cmap=args['cmap_clouds'],
                          levels=args['levels_clouds'], zorder=3)
 
-        # Unfortunately m.contour with tri = True doesn't work because of a bug 
-        c = args['ax'].tricontour(args['x'], args['y'], data['prmsl'],
+        c = args['ax'].contour(args['x'], args['y'], data['prmsl'],
                              levels=args['levels_mslp'], colors='whitesmoke',
                              linewidths=1, zorder=7, alpha=1.0)
 
         labels = args['ax'].clabel(c, c.levels, inline=True, fmt='%4.0f' , fontsize=6)
+
+        maxlabels = plot_maxmin_points(args['ax'], args['x'], args['y'], data['prmsl'],
+                                        'max', 200, symbol='H', color='royalblue', random=True)
+        minlabels = plot_maxmin_points(args['ax'], args['x'], args['y'], data['prmsl'],
+                                        'min', 200, symbol='L', color='coral', random=True)
+
         an_fc = annotation_forecast(args['ax'], time)
         an_var = annotation(args['ax'], 'Clouds, rain, snow and MSLP' ,loc='lower left', fontsize=6)
         an_run = annotation_run(args['ax'], run)
@@ -111,7 +116,7 @@ def plot_files(dss, **args):
              label='Snow [mm/h]')
             cbar_rain = plt.gcf().colorbar(cs_rain, cax=ax_cbar_2, orientation='horizontal',
              label='Rain [mm/h]')
-            cbar_snow.ax.tick_params(labelsize=8) 
+            cbar_snow.ax.tick_params(labelsize=8)
             cbar_rain.ax.tick_params(labelsize=8)
 
         if debug:
@@ -119,7 +124,7 @@ def plot_files(dss, **args):
         else:
             plt.savefig(filename, **options_savefig)        
 
-        remove_collections([c, cs_rain, cs_snow, cs_clouds, labels, an_fc, an_var, an_run])
+        remove_collections([c, cs_rain, cs_snow, cs_clouds, labels, an_fc, an_var, an_run, maxlabels, minlabels])
 
         first = False 
 

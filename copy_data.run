@@ -3,16 +3,18 @@
 # Cd into our working directory in case we're not into it already
 cd "$(dirname "$0")";
 
+echo "----------------------------------------------------------------------------------------------"
 echo "icon-globe: Starting processing of icon model data - `date`"
+echo "----------------------------------------------------------------------------------------------"
 
 # Folder to be used to download and process data
-# export MODEL_DATA_FOLDER="/tmp/icon-globe/"
 export MODEL_DATA_FOLDER="/tmp/icon-globe/"
 export HOME_FOLDER=$(pwd)
 export N_CONCUR_PROCESSES=12 
 export NCFTP_BOOKMARK="altervista"
-DATA_DOWNLOAD=true
-DATA_PLOTTING=false
+export REMAP=true
+DATA_DOWNLOAD=false
+DATA_PLOTTING=true
 DATA_UPLOAD=false
 
 ##### LOAD functions to download model data
@@ -25,35 +27,27 @@ ulimit -Sn 8192
 #conda activate nwp-py2
 ###########################################
 
-mkdir -p ${MODEL_DATA_FOLDER}world
-mkdir -p ${MODEL_DATA_FOLDER}us
-
-# This also create MODEL_DATA_FOLDER if it does not exist
-
-##### COMPUTE the date variables to determine the run
-export year=`date +"%Y"`
-export month=`date +"%m"`
-export day=`date +"%d"`
-export hour=`date +"%H"`
-export hour_no_zero=`date -u +"%-H"`
-# note that this date is in UTC which is needed for retrieving the correct run!
-
-if [ "$hour_no_zero" -ge 4 ] && [ "$hour_no_zero" -lt 9 ] 
-then 
- run="00"
-elif [ "$hour_no_zero" -ge 9 ] && [ "$hour_no_zero" -lt 16 ] 
-then
- run="06"
-elif [ "$hour_no_zero" -ge 16 ] && [ "$hour_no_zero" -lt 21 ] 
-then
- run="12"
-elif [ "$hour_no_zero" -ge 21 ] 
-then
- run="18"
+# Retrieve run ##########################
+latest_run=`python get_last_run.py`
+if [ -f $MODEL_DATA_FOLDER/last_processed_run.txt ]; then
+	latest_processed_run=`while read line; do echo $line; done < $MODEL_DATA_FOLDER/last_processed_run.txt`
+	if [ $latest_run -gt $latest_processed_run ]; then
+		echo "New run ${latest_run} found! Last processed run was ${latest_processed_run}."
+	else
+		echo "Run ${latest_processed_run} already processed, exiting"
+		exit 0
+	fi
 fi
 
-export run
-###########################################
+export year=${latest_run:0:4} 
+export month=${latest_run:4:2} 
+export day=${latest_run:6:2} 
+export run=${latest_run:8:2}
+
+#############################################
+
+mkdir -p ${MODEL_DATA_FOLDER}world
+mkdir -p ${MODEL_DATA_FOLDER}us
 
 # Move to the data folder to do processing
 cd ${MODEL_DATA_FOLDER} || { echo 'Cannot change to DATA folder' ; exit 1; }
@@ -61,73 +55,81 @@ cd ${MODEL_DATA_FOLDER} || { echo 'Cannot change to DATA folder' ; exit 1; }
 # SECTION 1 - DATA DOWNLOAD ############################################################
 
 if [ "$DATA_DOWNLOAD" = true ]; then
-	echo "-----------------------------------------------"
+	echo "----------------------------------------------------------------------------------------------"
 	echo "icon-globe: Starting downloading of data - `date`"
-	echo "-----------------------------------------------"
+	echo "----------------------------------------------------------------------------------------------"
 	# Remove older files
-	# rm ${MODEL_DATA_FOLDER}*.nc
+	rm ${MODEL_DATA_FOLDER}*.nc
 	rm ${MODEL_DATA_FOLDER}*.grib2
 
 	# Invariant
 	download_invariant_icon_globe
 
+	export hours_download=$(seq -s "|" -f "%03g" 0 3 180)
+
 	#2-D variables
-	# variables=("PMSL" "CLCT" "TOT_PREC" "VMAX_10M" "RAIN_CON"\
-	# 			 "RAIN_GSP" "SNOW_CON" "SNOW_GSP" "T_2M" "TD_2M" "WW")
-	# parallel -j 8 --delay 1 download_merge_2d_variable_icon_globe ::: "${variables[@]}"
+	variables=("PMSL" "CLCT" "TOT_PREC" "VMAX_10M" "RAIN_CON"\
+				 "RAIN_GSP" "SNOW_CON" "SNOW_GSP" "T_2M" "TD_2M" "WW"\
+				 "U_10M" "V_10M")
+	parallel -j 8 --delay 1 download_merge_2d_variable_icon_globe ::: "${variables[@]}"
 
 	#3-D variables on pressure levels
 	variables=("T" "FI" "RELHUM" "U" "V")
-	parallel -j 8 --delay 2 download_merge_3d_variable_icon_globe ::: "${variables[@]}"
-
-	# optional use only 3 hourly data 
-	# cdo select,hour=0,3,6,9,12,15,18,21 ICON_${year}${month}${day}${run}.nc ICON_${year}${month}${day}${run}_3h.nc
-	# rm icon_global_* 
-	# optional remapping
-	# cdo -O -r remapnn,grid.cdo ICON_${year}${month}${day}${run}.nc ICON_${year}${month}${day}${run}_remap.nc
+	parallel -j 8 --delay 1 download_merge_3d_variable_icon_globe ::: "${variables[@]}"
 fi 
 
 # SECTION 2 - DATA PLOTTING ############################################################
 
 if [ "$DATA_PLOTTING" = true ]; then
-	echo "-----------------------------------------------"
+	echo "----------------------------------------------------------------------------------------------"
 	echo "icon-globe: Starting plotting of data - `date`"
-	echo "-----------------------------------------------"
+	echo "----------------------------------------------------------------------------------------------"
 	python --version
 	cp ${HOME_FOLDER}/plotting/*.py ${MODEL_DATA_FOLDER}
 
 	export QT_QPA_PLATFORM=offscreen # Needed to avoid errors when using Python without display
 
-	python plot_meteogram.py Hamburg Storrs Milan Pisa Toulouse Rome Naples Utrecht Sassari Palermo Cagliari
+	python plot_meteogram_remap.py Hamburg Storrs Milan Pisa Toulouse Rome Naples Utrecht Sassari Palermo Cagliari
 
-	scripts=("plot_jetstream.py" "plot_rain_acc.py" "plot_clouds.py" "plot_geop_500.py"\
-			 "plot_mslp_wind.py" "plot_thetae.py")
+	scripts=("plot_jetstream_remap.py" "plot_rain_acc_remap.py" "plot_clouds_remap.py" "plot_geop_500_remap.py"\
+			 "plot_mslp_wind_remap.py" "plot_thetae_remap.py")
 
-	projections=("nh" "us")
+	projections=("nh" "us" "world")
 	parallel -j 5 python ::: "${scripts[@]}" ::: "${projections[@]}"
+fi
 
-	# now plot for the whole world (take a lot of time)
-	# scripts=("plot_jetstream.py" "plot_rain_acc.py" "plot_geop_500.py" "plot_mslp_wind.py" "plot_thetae.py")
-	# parallel -j ${N_CONCUR_PROCESSES} python ::: "${scripts[@]}" ::: "world"
+
+############################################################
+
+# If we at least produced some netcdf and images we assume the run is succesfull and 
+# store the run processed in a text file. Unfortunately there is no easy way to check
+# if the processing is really succesfull as we have many errors in the process that
+# don't undermine the whole processing! 
+
+N_NETCDF_FILES=`find . -type f -name '*.nc' -printf x | wc -c`
+N_IMAGES=`find . -type f -name '*.png' -printf x | wc -c`
+
+if [ $N_NETCDF_FILES -ge 2 ] && [ $N_IMAGES -ge 10 ]; then
+	echo ${latest_run} > last_processed_run.txt
 fi
 
 
 # SECTION 3 - IMAGES UPLOAD ############################################################
 # Use ncftpbookmarks to add a new FTP server with credentials
 if [ "$DATA_UPLOAD" = true ]; then
-	echo "-----------------------------------------------"
+	echo "----------------------------------------------------------------------------------------------"
 	echo "icon-globe: Starting FTP uploading - `date`"
-	echo "-----------------------------------------------"
+	echo "----------------------------------------------------------------------------------------------"
 	# First upload meteograms
-	ncftpput -R -v ${NCFTP_BOOKMARK} icon_globe/meteograms meteogram_*
+	ncftpput -R -v -DD -m  ${NCFTP_BOOKMARK} icon_globe/meteograms meteogram_*
 	#
 	# Then upload the other pictures
 	#
 	images_output=("thetae_850" "gph_500" "winds10m" "precip_clouds" "winds_jet" "precip_acc")
 	# suffix for naming
-	projections_output=("" "us/")
+	projections_output=("" "us/" "world/")
 	# remote folder on server
-	projections_output_folder=("icon_globe" "icon_us")
+	projections_output_folder=("icon_globe" "icon_us" "icon_world")
 
 	# Create a lisf of all the images to upload 
 	upload_elements=()
@@ -139,22 +141,17 @@ if [ "$DATA_UPLOAD" = true ]; then
 
 	# Finally upload the images 
 	for k in "${upload_elements[@]}"; do
-		ncftpput -R -v ${NCFTP_BOOKMARK} ${k}
+		ncftpput -R -v -DD -m  ${NCFTP_BOOKMARK} ${k}
 	done
 
 fi 
 
 # SECTION 4 - CLEANING ############################################################
 
-#Remove images locally
-rm ${MODEL_DATA_FOLDER}*.png
-rm ${MODEL_DATA_FOLDER}us/*.png
-rm ${MODEL_DATA_FOLDER}world/*.png
-rm ${MODEL_DATA_FOLDER}*.py
 
-echo "-----------------------------------------------"
+echo "----------------------------------------------------------------------------------------------"
 echo "icon-globe: Finished cleaning up - `date`"
-echo "-----------------------------------------------"
+echo "----------------------------------------------------------------------------------------------"
 
 ############################################################
 

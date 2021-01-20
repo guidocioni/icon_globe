@@ -12,7 +12,7 @@ if not debug:
 import matplotlib.pyplot as plt
 
 # The one employed for the figure name when exported 
-variable_name = 'winds10m'
+variable_name = 'precip_acc'
 
 print_message('Starting script to plot '+variable_name)
 
@@ -29,31 +29,38 @@ else:
 def main():
     """In the main function we basically read the files and prepare the variables to be plotted.
     This is not included in utils.py as it can change from case to case."""
-    dset = read_dataset(variables=['PMSL', 'VMAX_10M'], projection=projection)
+    dset = read_dataset(variables=['TOT_PREC', 'PMSL'], remapped=True, projection=projection)
+    dset['prmsl'].metpy.convert_units('hPa')
 
-    levels_winds_10m = np.arange(20., 150., 5.)
-    cmap = get_colormap("winds")
+    levels_precip = list(np.arange(1, 50, 0.4)) + \
+                    list(np.arange(51, 100, 2)) +\
+                    list(np.arange(101, 200, 3)) +\
+                    list(np.arange(201, 500, 6)) + \
+                    list(np.arange(501, 1000, 50)) + \
+                    list(np.arange(1001, 2000, 100))
+
+    cmap, norm = get_colormap_norm('rain_acc_wxcharts', levels=levels_precip)
 
     _ = plt.figure(figsize=(figsize_x, figsize_y))
     ax = plt.gca()
-    m, x, y, mask = get_projection(dset, projection)
+    m, x, y, mask = get_projection(dset, projection, remapped=True)
     # Subset dataset only on the area
     dset = dset.where(mask, drop=True)
     m.drawmapboundary(fill_color='whitesmoke')
     m.fillcontinents(color='lightgray',lake_color='whitesmoke', zorder=0)
-    # Create a mask to retain only the points inside the globe
-    # to avoid a bug in basemap and a problem in matplotlib
+
     dset = dset.load()
-    dset['prmsl'].metpy.convert_units('hPa')
 
     levels_mslp = np.arange(dset['prmsl'].min().astype("int"),
         dset['prmsl'].max().astype("int"), 7.)
 
     # All the arguments that need to be passed to the plotting function
-    args=dict(m=m, x=x, y=y, ax=ax,
-             levels_winds_10m=levels_winds_10m, levels_mslp=levels_mslp,
-             time=dset.time,
-             projection=projection, cmap=cmap)
+    args=dict(x=x, y=y, ax=ax,
+              levels_precip=levels_precip,
+              levels_mslp=levels_mslp,
+              time=dset.time,
+              projection=projection,
+              cmap=cmap, norm=norm)
 
     print_message('Pre-processing finished, launching plotting scripts')
     if debug:
@@ -71,25 +78,27 @@ def plot_files(dss, **args):
     first = True
     for time_sel in dss.time:
         data = dss.sel(time=time_sel)
-        data['VMAX_10M'].metpy.convert_units('kph')
         time, run, cum_hour = get_time_run_cum(data)
         # Build the name of the output image
         filename = subfolder_images[projection] + '/' + variable_name + '_%s.png' % cum_hour
 
-        cs = args['ax'].tricontourf(args['x'], args['y'], data['VMAX_10M'],
-                         extend='max', cmap=args['cmap'], levels=args['levels_winds_10m'])
+        cs = args['ax'].contourf(args['x'], args['y'], data['tp'],
+                         extend='max', cmap=args['cmap'], norm=args['norm'],
+                         levels=args['levels_precip'])
 
-        # Unfortunately m.contour with tri = True doesn't work because of a bug 
-        c = args['ax'].tricontour(args['x'], args['y'], data['prmsl'],
-                             levels=args['levels_mslp'], colors='black', linewidths=0.5)
+        c = args['ax'].contour(args['x'], args['y'], data['prmsl'],
+                             levels=args['levels_mslp'], colors='black', linewidths=0.5, antialiased=True)
+
 
         labels = args['ax'].clabel(c, c.levels, inline=True, fmt='%4.0f' , fontsize=5)
         an_fc = annotation_forecast(args['ax'], time)
-        an_var = annotation(args['ax'], 'Accumulated precipitation [mm] and MSLP [hPa]' ,loc='lower left', fontsize=6)
+        an_var = annotation(args['ax'], 'Accumulated precipitation [mm] and MSLP [hPa]',
+            loc='lower left', fontsize=6)
         an_run = annotation_run(args['ax'], run)
 
         if first:
-            plt.colorbar(cs, orientation='horizontal', label='Wind [km/h]', pad=0.03, fraction=0.03)
+            plt.colorbar(cs, orientation='horizontal', label='Accumulated precipitation [mm]',
+                         pad=0.03, fraction=0.04)
 
         if debug:
             plt.show(block=True)
@@ -98,8 +107,7 @@ def plot_files(dss, **args):
 
         remove_collections([c, cs, labels, an_fc, an_var, an_run])
 
-        first = False 
-
+        first = False
 
 if __name__ == "__main__":
     import time

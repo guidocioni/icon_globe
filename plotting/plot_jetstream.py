@@ -30,7 +30,7 @@ else:
 def main():
     """In the main function we basically read the files and prepare the variables to be plotted.
     This is not included in utils.py as it can change from case to case."""
-    dset = read_dataset(variables=['U', 'V', 'FI'], level=30000)
+    dset = read_dataset(variables=['U', 'V', 'FI'], level=30000, projection=projection)
 
     # Select 850 hPa level using metpy
     levels_wind = np.arange(80., 300., 10.)
@@ -42,7 +42,7 @@ def main():
     m, x, y, mask = get_projection(dset, projection)
     m.fillcontinents(color='lightgray', lake_color='whitesmoke', zorder=0)
     # Subset dataset only on the area
-    dset = dset[dict(ncells=mask)]
+    dset = dset.where(mask, drop=True)
     dset = compute_wind_speed(dset)
     dset = compute_geopot_height(dset)
 

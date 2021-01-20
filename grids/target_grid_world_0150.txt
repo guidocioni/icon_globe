@@ -1,0 +1,8 @@
+# CDO grid description file for global regular grid of ICON.
+gridtype  = lonlat
+xsize     = 2399
+ysize     = 1199
+xfirst    = -180
+xinc      = 0.15
+yfirst    = -90
+yinc      = 0.15

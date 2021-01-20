@@ -32,10 +32,9 @@ def main():
                                     'SNOW_GSP','SNOW_CON','RELHUM','U','V','CLC'],
                                     engine='scipy')
 
-    lons, lats = get_coordinates()
     hsurf = xr.open_dataset(glob(folder+'invariant_*_global.nc')[0]).squeeze()
 
-    args = dict(dset=dset, hsurf=hsurf, lons=lons, lats=lats)
+    args = dict(dset=dset, hsurf=hsurf)
     print_message('Pre-processing finished, launching plotting scripts')
     cities_chunks = chunks(cities, 5)
     plot_param = partial(plot, **args)
@@ -46,7 +45,7 @@ def plot(cities, **args):
     for city in cities:
         print('Producing meteogram for %s' % city)
         lon, lat = get_city_coordinates(city)
-        icell = np.argmin(np.sqrt((args['lons']-lon)**2+(args['lats']-lat)**2))
+        icell = np.argmin(np.sqrt((args['dset']['lon']-lon)**2+(args['dset']['lat']-lat)**2))
         dset_city = args['dset'].sel(ncells=icell)
         time, run, cum_hour = get_time_run_cum(dset_city)
         height = args['hsurf'].sel(ncells=icell)

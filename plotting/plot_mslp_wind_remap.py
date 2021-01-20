@@ -29,14 +29,14 @@ else:
 def main():
     """In the main function we basically read the files and prepare the variables to be plotted.
     This is not included in utils.py as it can change from case to case."""
-    dset = read_dataset(variables=['PMSL', 'VMAX_10M'], projection=projection)
+    dset = read_dataset(variables=['PMSL', 'VMAX_10M', 'U_10M', 'V_10M'], projection=projection, remapped=True)
 
     levels_winds_10m = np.arange(20., 150., 5.)
     cmap = get_colormap("winds")
 
     _ = plt.figure(figsize=(figsize_x, figsize_y))
     ax = plt.gca()
-    m, x, y, mask = get_projection(dset, projection)
+    m, x, y, mask = get_projection(dset, projection, remapped=True)
     # Subset dataset only on the area
     dset = dset.where(mask, drop=True)
     m.drawmapboundary(fill_color='whitesmoke')
@@ -76,14 +76,28 @@ def plot_files(dss, **args):
         # Build the name of the output image
         filename = subfolder_images[projection] + '/' + variable_name + '_%s.png' % cum_hour
 
-        cs = args['ax'].tricontourf(args['x'], args['y'], data['VMAX_10M'],
+        cs = args['ax'].contourf(args['x'], args['y'], data['VMAX_10M'],
                          extend='max', cmap=args['cmap'], levels=args['levels_winds_10m'])
 
-        # Unfortunately m.contour with tri = True doesn't work because of a bug 
-        c = args['ax'].tricontour(args['x'], args['y'], data['prmsl'],
+        c = args['ax'].contour(args['x'], args['y'], data['prmsl'],
                              levels=args['levels_mslp'], colors='black', linewidths=0.5)
 
         labels = args['ax'].clabel(c, c.levels, inline=True, fmt='%4.0f' , fontsize=5)
+
+        maxlabels = plot_maxmin_points(args['ax'], args['x'], args['y'], data['prmsl'],
+                                        'max', 200, symbol='H', color='royalblue', random=True)
+        minlabels = plot_maxmin_points(args['ax'], args['x'], args['y'], data['prmsl'],
+                                        'min', 200, symbol='L', color='coral', random=True)
+
+        density = 25
+        scale = 4e2
+        cv = args['ax'].quiver(args['x'][::density, ::density],
+                               args['y'][::density, ::density],
+                               data['10u'][::density, ::density],
+                               data['10v'][::density, ::density],
+                               scale=scale,
+                               alpha=0.5, color='gray')
+
         an_fc = annotation_forecast(args['ax'], time)
         an_var = annotation(args['ax'], 'Accumulated precipitation [mm] and MSLP [hPa]' ,loc='lower left', fontsize=6)
         an_run = annotation_run(args['ax'], run)
@@ -96,7 +110,7 @@ def plot_files(dss, **args):
         else:
             plt.savefig(filename, **options_savefig)        
 
-        remove_collections([c, cs, labels, an_fc, an_var, an_run])
+        remove_collections([c, cs, labels, an_fc, an_var, an_run, cv, maxlabels, minlabels])
 
         first = False 
 
