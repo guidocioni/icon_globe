@@ -53,7 +53,7 @@ options_savefig={
 # Dictionary to map the output folder based on the projection employed
 subfolder_images={
     'nh' : folder_images,
-    'nh_polar' : folder_images,
+    'nh_polar' : folder_images+'nh_polar',
     'euratl': folder_images+'euratl',
     'us' : folder_images+'us',
     'world': folder_images+'world' 

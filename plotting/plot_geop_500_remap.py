@@ -34,7 +34,7 @@ def main():
                         projection=projection, remapped=True)
 
     levels_temp = np.arange(-34., 36., 2.)
-    levels_gph = np.arange(4700., 6000., 70.)
+    levels_gph = np.arange(4700., 6000., 80.)
 
     cmap = get_colormap('temp_meteociel')
 
@@ -102,9 +102,9 @@ def plot_files(dss, **args):
 
 
         maxlabels = plot_maxmin_points(args['ax'], args['x'], args['y'], data['geop'],
-                                        'max', 160, symbol='H', color='royalblue', random=True)
+                                        'max', 250, symbol='H', color='royalblue', random=True)
         minlabels = plot_maxmin_points(args['ax'], args['x'], args['y'], data['geop'],
-                                        'min', 160, symbol='L', color='coral', random=True)
+                                        'min', 250, symbol='L', color='coral', random=True)
 
 
         an_fc = annotation_forecast(args['ax'], time)

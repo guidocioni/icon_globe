@@ -14,7 +14,7 @@ if not debug:
 import matplotlib.pyplot as plt
 
 # The one employed for the figure name when exported 
-variable_name = 'gph_50'
+variable_name = 'gpt_50'
 
 print_message('Starting script to plot '+variable_name)
 
@@ -34,7 +34,7 @@ def main():
                         projection=projection, remapped=True)
 
     levels_temp = np.arange(-86, -18, 1)
-    levels_gph = np.arange(1970., 2050., 25.)
+    levels_gph = np.arange(19700., 20500., 250.)
 
     cmap = get_colormap('temp_meteociel')
 
@@ -54,7 +54,7 @@ def main():
 
     print_message('Pre-processing finished, launching plotting scripts')
     if debug:
-        plot_files(dset.isel(time=slice(0, 2)), **args)
+        plot_files(dset.isel(time=slice(-2, -1)), **args)
     else:
         # Parallelize the plotting by dividing into chunks and processes
         dss = chunks_dataset(dset, chunks_size)

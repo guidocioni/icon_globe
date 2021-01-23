@@ -4,6 +4,73 @@ from metpy.units import units
 from utils import *
 
 
+# def compute_potential_vorticity(dset, tvar='t', pres=350, uvar='u', vvar='v'):
+#     theta = mpcalc.potential_temperature(pres * units.hPa)
+
+def compute_spacing(dset):
+    dx, dy = mpcalc.lat_lon_grid_deltas(dset['lon'],
+                                        dset['lat'])
+    
+    dx = xr.DataArray(dx.magnitude,
+             dims=['y1', 'x1'],
+           attrs={'standard_name': 'x grid spacing',
+                  'units': dx.units},
+                       name='dx')
+    dy = xr.DataArray(dy.magnitude,
+             dims=['y2', 'x2'],
+           attrs={'standard_name': 'y grid spacing',
+                  'units': dx.units},
+                       name='dy')
+    
+    out = xr.merge([dset, dx, dy])
+    out.attrs = dset.attrs
+    
+    return out
+
+
+def compute_theta(dset, tvar='t'):
+    pres =  dset['plev'].metpy.unit_array
+    theta = mpcalc.potential_temperature(pres[:, None, None], dset[tvar])
+    
+    theta = xr.DataArray(theta.magnitude,
+                           coords= dset[tvar].coords,
+                           attrs={'standard_name': 'Potential Temperature',
+                                  'units': theta.units},
+                            name='theta')
+
+    out = xr.merge([dset, theta])
+    out.attrs = dset.attrs
+
+    return out
+
+
+# Only call this on a time-subset dataset!! 
+def compute_pv(dset):
+    dx = dset['dx'].values[:] * units(str(dset['dx'].units))
+    dy = dset['dy'].values[:] * units(str(dset['dy'].units))
+    lats = dset['lat'].metpy.unit_array
+    pres =  dset['plev'].metpy.unit_array
+    theta = dset['theta'].values[:] * units(str(dset['theta'].units))
+    pv = mpcalc.potential_vorticity_baroclinic(theta,
+                                               pres[:, None, None],
+                                               dset['u'],
+                                               dset['v'],
+                                               dx[None, :, :], dy[None, :, :],
+                                               lats[None, :, None]
+                                               )
+    
+    pv = xr.DataArray(pv.magnitude,
+                       coords=dset['u'].coords,
+                       attrs={'standard_name': 'Potential Vorticity',
+                              'units': pv.units},
+                       name='pv')
+    
+    out = xr.merge([dset, pv])
+    out.attrs = dset.attrs
+
+    return out
+
+    
 def compute_geopot_height(dset, zvar='z', level=None):
     if level:
         zlevel = dset[zvar].sel(plev=level)

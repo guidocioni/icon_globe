@@ -89,14 +89,19 @@ def plot_files(dss, **args):
         minlabels = plot_maxmin_points(args['ax'], args['x'], args['y'], data['prmsl'],
                                         'min', 200, symbol='L', color='coral', random=True)
 
-        density = 25
-        scale = 4e2
+        if projection != 'world':
+            density = 15
+            scale = 5e2
+        else:
+            density = 35
+            scale = 5e2
+
         cv = args['ax'].quiver(args['x'][::density, ::density],
                                args['y'][::density, ::density],
                                data['10u'][::density, ::density],
                                data['10v'][::density, ::density],
                                scale=scale,
-                               alpha=0.5, color='gray')
+                               alpha=0.5, color='gray', headwidth=2)
 
         an_fc = annotation_forecast(args['ax'], time)
         an_var = annotation(args['ax'], 'Accumulated precipitation [mm] and MSLP [hPa]' ,loc='lower left', fontsize=6)

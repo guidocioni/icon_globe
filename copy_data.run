@@ -13,9 +13,9 @@ export HOME_FOLDER=$(pwd)
 export N_CONCUR_PROCESSES=12 
 export NCFTP_BOOKMARK="altervista"
 export REMAP=true
-DATA_DOWNLOAD=false
+DATA_DOWNLOAD=true
 DATA_PLOTTING=true
-DATA_UPLOAD=false
+DATA_UPLOAD=true
 
 ##### LOAD functions to download model data
 . ./functions_download_dwd.sh
@@ -47,7 +47,10 @@ export run=${latest_run:8:2}
 #############################################
 
 mkdir -p ${MODEL_DATA_FOLDER}world
+mkdir -p ${MODEL_DATA_FOLDER}remap
 mkdir -p ${MODEL_DATA_FOLDER}us
+mkdir -p ${MODEL_DATA_FOLDER}euratl
+mkdir -p ${MODEL_DATA_FOLDER}nh_polar
 
 # Move to the data folder to do processing
 cd ${MODEL_DATA_FOLDER} || { echo 'Cannot change to DATA folder' ; exit 1; }
@@ -60,7 +63,7 @@ if [ "$DATA_DOWNLOAD" = true ]; then
 	echo "----------------------------------------------------------------------------------------------"
 	# Remove older files
 	rm ${MODEL_DATA_FOLDER}*.nc
-	rm ${MODEL_DATA_FOLDER}*.grib2
+	rm ${MODEL_DATA_FOLDER}remap/*.nc
 
 	# Invariant
 	download_invariant_icon_globe
@@ -92,10 +95,11 @@ if [ "$DATA_PLOTTING" = true ]; then
 	python plot_meteogram_remap.py Hamburg Storrs Milan Pisa Toulouse Rome Naples Utrecht Sassari Palermo Cagliari
 
 	scripts=("plot_jetstream_remap.py" "plot_rain_acc_remap.py" "plot_clouds_remap.py" "plot_geop_500_remap.py"\
-			 "plot_mslp_wind_remap.py" "plot_thetae_remap.py")
+			 "plot_mslp_wind_remap.py" "plot_thetae_remap.py" "plot_geop_50_remap.py" "plot_pv_250_remap.py")
 
-	projections=("nh" "us" "world")
+	projections=("euratl" "nh" "nh_polar" "us" "world")
 	parallel -j 5 python ::: "${scripts[@]}" ::: "${projections[@]}"
+	rm ${MODEL_DATA_FOLDER}/*.py
 fi
 
 
@@ -125,11 +129,11 @@ if [ "$DATA_UPLOAD" = true ]; then
 	#
 	# Then upload the other pictures
 	#
-	images_output=("thetae_850" "gph_500" "winds10m" "precip_clouds" "winds_jet" "precip_acc")
+	images_output=("thetae_850" "gph_500" "winds10m" "precip_clouds" "winds_jet" "precip_acc" "pv_250" "gpt_50")
 	# suffix for naming
-	projections_output=("" "us/" "world/")
+	projections_output=("" "us/" "world/" "euratl/" "nh_polar")
 	# remote folder on server
-	projections_output_folder=("icon_globe" "icon_us" "icon_world")
+	projections_output_folder=("icon_globe" "icon_us" "icon_world" "icon_euratl" "icon_nh_polar")
 
 	# Create a lisf of all the images to upload 
 	upload_elements=()
