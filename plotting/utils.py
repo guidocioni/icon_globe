@@ -11,6 +11,7 @@ import sys
 from glob import glob
 import xarray as xr
 from matplotlib.colors import BoundaryNorm
+from matplotlib.offsetbox import AnnotationBbox, OffsetImage
 import metpy
 import re
 import requests
@@ -33,7 +34,7 @@ else:
 input_file=folder+'ICON_*.nc' 
 folder_images = folder
 chunks_size = 10
-processes = 9
+processes = 8
 figsize_x = 12
 figsize_y = 9
 
@@ -348,21 +349,19 @@ def get_projection(dset, projection="nh", countries=True, regions=False,
     lon, lat = get_coordinates(dset, remapped)
     proj_options =proj_defs[projection]
     m = Basemap(**proj_options)
-    m.drawcoastlines(linewidth=0.5, linestyle='solid', color='black', zorder=5)
+    m.drawcoastlines(linewidth=0.5, linestyle='solid', color='black', zorder=8)
 
     if projection=="us":
-        m.drawstates(linewidth=0.5, linestyle='solid', color='black', zorder=5)
-
+        m.drawstates(linewidth=0.5, linestyle='solid', color='black', zorder=8)
     elif projection == "euratl":
         if labels:
             m.drawparallels(np.arange(-90.0, 90.0, 10.), linewidth=0.2, color='white',
                 labels=[True, False, False, True], fontsize=7)
             m.drawmeridians(np.arange(0.0, 360.0, 10.), linewidth=0.2, color='white',
                 labels=[True, False, False, True], fontsize=7)
-
     elif projection == "it":
         m.readshapefile(home_folder + '/plotting/shapefiles/ITA_adm/ITA_adm1',
-                            'ITA_adm1', linewidth=0.2, color='black', zorder=7)
+                            'ITA_adm1', linewidth=0.2, color='black', zorder=8)
         if labels:
             m.drawparallels(np.arange(-90.0, 90.0, 5.), linewidth=0.2, color='white',
                 labels=[True, False, False, True], fontsize=7)
@@ -371,7 +370,7 @@ def get_projection(dset, projection="nh", countries=True, regions=False,
 
     elif projection == "de":
         m.readshapefile(home_folder + '/plotting/shapefiles/DEU_adm/DEU_adm1',
-                            'DEU_adm1',linewidth=0.2,color='black',zorder=7)
+                            'DEU_adm1',linewidth=0.2,color='black', zorder=8)
         if labels:
             m.drawparallels(np.arange(-90.0, 90.0, 5.), linewidth=0.2, color='white',
                 labels=[True, False, False, True], fontsize=7)
@@ -379,9 +378,9 @@ def get_projection(dset, projection="nh", countries=True, regions=False,
                 labels=[True, False, False, True], fontsize=7)
 
     if countries:
-        m.drawcountries(linewidth=0.5, linestyle='solid', color='black', zorder=5)
+        m.drawcountries(linewidth=0.5, linestyle='solid', color='black', zorder=8)
     if projection=="world":
-        m.drawcountries(linewidth=0.5, linestyle='solid', color='white', zorder=5)
+        m.drawcountries(linewidth=0.5, linestyle='solid', color='white', zorder=8)
     if labels:
         m.drawparallels(np.arange(-90.0, 90.0, 10.), linewidth=0.2, color='white',
             labels=[True, False, False, True], fontsize=7)
@@ -506,6 +505,10 @@ def get_colormap_norm(cmap_type, levels):
         colors_tuple = pd.read_csv(home_folder + '/plotting/cmap_rain_acc_wxcharts.rgba').values    
         cmap, norm = from_levels_and_colors(levels, sns.color_palette(colors_tuple, n_colors=len(levels)),
                          extend='max')
+    elif cmap_type == "snow_wxcharts":
+        colors_tuple = pd.read_csv(home_folder + '/plotting/cmap_snow_wxcharts.rgba').values    
+        cmap, norm = from_levels_and_colors(levels, sns.color_palette(colors_tuple, n_colors=len(levels)),
+                         extend='max')
 
     return(cmap, norm)
 
@@ -576,3 +579,41 @@ def plot_maxmin_points(ax, lon, lat, data, extrema, nsize, symbol, color='k',
                 horizontalalignment='center', verticalalignment='top', zorder=8) )
     return(texts)
 
+
+def add_vals_on_map(ax, projection, var, levels, density=50,
+                     cmap='rainbow', norm=None, shift_x=0., shift_y=0., fontsize=7, lcolors=True):
+    '''Given an input projection, a variable containing the values and a plot put
+    the values on a map exlcuing NaNs and taking care of not going
+    outside of the map boundaries, which can happen.
+    - shift_x and shift_y apply a shifting offset to all text labels
+    - colors indicate whether the colorscale cmap should be used to map the values of the array'''
+
+    if norm is None:
+        norm = colors.Normalize(vmin=np.min(levels), vmax=np.max(levels))
+
+    m = mplcm.ScalarMappable(norm=norm, cmap=cmap)
+
+    proj_options = proj_defs[projection]
+    lon_min, lon_max, lat_min, lat_max = proj_options['llcrnrlon'], proj_options['urcrnrlon'],\
+                                         proj_options['llcrnrlat'], proj_options['urcrnrlat']
+
+    # Remove values outside of the extents
+    var = var.sel(lat=slice(lat_min + 0.15, lat_max - 0.15),
+                  lon=slice(lon_min + 0.15, lon_max - 0.15))[::density, ::density]
+    lons = var.lon.values
+    lats = var.lat.values
+
+    at = []
+    for ilat, ilon in np.ndindex(var.shape):
+        if not var[ilat, ilon].isnull():
+            if lcolors:
+                at.append(ax.annotate(('%d'%var[ilat, ilon]), (lons[ilon] + shift_x, lats[ilat] + shift_y),
+                                  color = m.to_rgba(float(var[ilat, ilon])), weight='bold', fontsize=fontsize,
+                                  path_effects=[path_effects.withStroke(linewidth=1, foreground="black")], zorder=5))
+
+            else:
+                at.append(ax.annotate(('%d'%var[ilat, ilon]), (lons[ilon] + shift_x, lats[ilat] + shift_y),
+                                 color = 'white', weight='bold', fontsize=fontsize,
+                                  path_effects=[path_effects.withStroke(linewidth=1, foreground="black")], zorder=5))
+
+    return at

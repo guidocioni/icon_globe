@@ -73,7 +73,7 @@ if [ "$DATA_DOWNLOAD" = true ]; then
 	#2-D variables
 	variables=("PMSL" "CLCT" "TOT_PREC" "VMAX_10M" "RAIN_CON"\
 				 "RAIN_GSP" "SNOW_CON" "SNOW_GSP" "T_2M" "TD_2M" "WW"\
-				 "U_10M" "V_10M")
+				 "U_10M" "V_10M" "H_SNOW")
 	parallel -j 8 --delay 1 download_merge_2d_variable_icon_globe ::: "${variables[@]}"
 
 	#3-D variables on pressure levels
@@ -95,7 +95,8 @@ if [ "$DATA_PLOTTING" = true ]; then
 	python plot_meteogram_remap.py Hamburg Storrs Milan Pisa Toulouse Rome Naples Utrecht Sassari Palermo Cagliari
 
 	scripts=("plot_jetstream_remap.py" "plot_rain_acc_remap.py" "plot_clouds_remap.py" "plot_geop_500_remap.py"\
-			 "plot_mslp_wind_remap.py" "plot_thetae_remap.py" "plot_geop_50_remap.py" "plot_pv_250_remap.py")
+			 "plot_mslp_wind_remap.py" "plot_thetae_remap.py" "plot_geop_50_remap.py" "plot_pv_250_remap.py" \
+			 "plot_winter_remap.py")
 
 	projections=("euratl" "nh" "nh_polar" "us" "world")
 	parallel -j 5 python ::: "${scripts[@]}" ::: "${projections[@]}"
@@ -129,9 +130,9 @@ if [ "$DATA_UPLOAD" = true ]; then
 	#
 	# Then upload the other pictures
 	#
-	images_output=("thetae_850" "gph_500" "winds10m" "precip_clouds" "winds_jet" "precip_acc" "pv_250" "gpt_50")
+	images_output=("thetae_850" "gph_500" "winds10m" "precip_clouds" "winds_jet" "precip_acc" "pv_250" "gpt_50" "winter")
 	# suffix for naming
-	projections_output=("" "us/" "world/" "euratl/" "nh_polar")
+	projections_output=("" "us/" "world/" "euratl/" "nh_polar/")
 	# remote folder on server
 	projections_output_folder=("icon_globe" "icon_us" "icon_world" "icon_euratl" "icon_nh_polar")
 

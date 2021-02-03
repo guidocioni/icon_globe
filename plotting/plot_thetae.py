@@ -33,7 +33,7 @@ def main():
     dset = read_dataset(variables=['T', 'RELHUM', 'PMSL'], level=85000, projection=projection)
     dset['prmsl'].metpy.convert_units('hPa')
 
-    levels_thetae = np.arange(-25., 75., 1.)
+    levels_thetae = np.arange(-25., 75., 2.)
 
     _ = plt.figure(figsize=(figsize_x, figsize_y))
     ax = plt.gca()

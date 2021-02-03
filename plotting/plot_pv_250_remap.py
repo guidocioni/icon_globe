@@ -103,6 +103,8 @@ def plot_files(dss, **args):
         an_var = annotation(args['ax'], 'PV @ 250 hPa and MSLP (hPa)',
             loc='lower left', fontsize=6)
         an_run = annotation_run(args['ax'], run)
+        logo = add_logo_on_map(ax=args['ax'],
+                                zoom=0.1, pos=(0.95, 0.08))
 
         if first:
             plt.colorbar(cs, orientation='horizontal', label='PV [%s]' % data['pv'].units, pad=0.03, fraction=0.035)
@@ -112,7 +114,7 @@ def plot_files(dss, **args):
         else:
             plt.savefig(filename, **options_savefig)        
 
-        remove_collections([cs, c, labels, maxlabels, minlabels, an_fc, an_var, an_run])
+        remove_collections([cs, c, labels, maxlabels, minlabels, an_fc, an_var, an_run, logo])
 
         first = False
 

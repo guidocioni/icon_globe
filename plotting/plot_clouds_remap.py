@@ -89,7 +89,7 @@ def plot_files(dss, **args):
                          levels=args['levels_rain'], zorder=4, antialiased=True)
         cs_snow = args['ax'].contourf(args['x'], args['y'], data['snow_rate'],
                          extend='max', cmap=args['cmap_snow'], norm=args['norm_snow'],
-                         levels=args['levels_snow'], zorder=5, antialiased=True)
+                         levels=args['levels_snow'], zorder=5)
         cs_clouds = args['ax'].contourf(args['x'], args['y'], data['CLCT'],
                          extend='max', cmap=args['cmap_clouds'],
                          levels=args['levels_clouds'], zorder=3)
@@ -108,10 +108,17 @@ def plot_files(dss, **args):
         an_fc = annotation_forecast(args['ax'], time)
         an_var = annotation(args['ax'], 'Clouds, rain, snow and MSLP' ,loc='lower left', fontsize=6)
         an_run = annotation_run(args['ax'], run)
+        logo = add_logo_on_map(ax=args['ax'],
+                                zoom=0.1, pos=(0.95, 0.08))
 
         if first:
-            ax_cbar = plt.gcf().add_axes([0.3, 0.1, 0.2, 0.01])
-            ax_cbar_2 = plt.gcf().add_axes([0.55, 0.1, 0.2, 0.01])
+            if projection in ['nh', 'nh_polar', 'us']:
+                ax_cbar = plt.gcf().add_axes([0.3, 0.09, 0.2, 0.01])
+                ax_cbar_2 = plt.gcf().add_axes([0.55, 0.09, 0.2, 0.01])
+            else:
+                ax_cbar = plt.gcf().add_axes([0.3, 0.17, 0.2, 0.01])
+                ax_cbar_2 = plt.gcf().add_axes([0.55, 0.17, 0.2, 0.01])
+ 
             cbar_snow = plt.gcf().colorbar(cs_snow, cax=ax_cbar, orientation='horizontal',
              label='Snow [mm/h]')
             cbar_rain = plt.gcf().colorbar(cs_rain, cax=ax_cbar_2, orientation='horizontal',
@@ -124,7 +131,7 @@ def plot_files(dss, **args):
         else:
             plt.savefig(filename, **options_savefig)        
 
-        remove_collections([c, cs_rain, cs_snow, cs_clouds, labels, an_fc, an_var, an_run, maxlabels, minlabels])
+        remove_collections([c, cs_rain, cs_snow, cs_clouds, labels, an_fc, an_var, an_run, maxlabels, minlabels, logo])
 
         first = False 
 

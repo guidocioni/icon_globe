@@ -37,6 +37,7 @@ download_merge_2d_variable_icon_globe()
 		echo "Remapping the output as requested"
 		cdo -P 8 remap,"${HOME_FOLDER}/grids/target_grid_world_0150.txt","${HOME_FOLDER}/grids/weights_icogl2world_0150.nc" \
 			-setgrid,"${HOME_FOLDER}/grids/icon_grid_0026_R03B07_G.nc" "${1}_${year}${month}${day}${run}_global.nc" "remap/${1}_${year}${month}${day}${run}_global.nc"
+		rm "${1}_${year}${month}${day}${run}_global.nc"
 	fi
 }
 export -f download_merge_2d_variable_icon_globe
@@ -59,6 +60,7 @@ download_merge_3d_variable_icon_globe()
 		echo "Remapping the output as requested"
 		cdo -P 8 remap,"${HOME_FOLDER}/grids/target_grid_world_0150.txt","${HOME_FOLDER}/grids/weights_icogl2world_0150.nc" \
 			-setgrid,"${HOME_FOLDER}/grids/icon_grid_0026_R03B07_G.nc" "${1}_${year}${month}${day}${run}_global.nc" "remap/${1}_${year}${month}${day}${run}_global.nc"
+		rm "${1}_${year}${month}${day}${run}_global.nc"
 	fi
 }
 export -f download_merge_3d_variable_icon_globe
@@ -81,6 +83,7 @@ download_invariant_icon_globe()
 		echo "Remapping the output as requested"
 		cdo -P 8 remap,"${HOME_FOLDER}/grids/target_grid_world_0150.txt","${HOME_FOLDER}/grids/weights_icogl2world_0150.nc" \
 			-setgrid,"${HOME_FOLDER}/grids/icon_grid_0026_R03B07_G.nc" "invariant_${year}${month}${day}${run}_global.nc" "remap/invariant_${year}${month}${day}${run}_global.nc"
+		rm "invariant_${year}${month}${day}${run}_global.nc"
 	fi
 }
 export -f download_invariant_icon_globe
@@ -101,6 +104,7 @@ download_merge_soil_variable_icon_globe()
 		echo "Remapping the output as requested"
 		cdo -P 8 remap,"${HOME_FOLDER}/grids/target_grid_world_0150.txt","${HOME_FOLDER}/grids/weights_icogl2world_0150.nc" \
 			-setgrid,"${HOME_FOLDER}/grids/icon_grid_0026_R03B07_G.nc" "${1}_${year}${month}${day}${run}_global.nc" "remap/${1}_${year}${month}${day}${run}_global.nc"
+		rm "${1}_${year}${month}${day}${run}_global.nc"
 	fi
 }
 export -f download_merge_soil_variable_icon_globe
