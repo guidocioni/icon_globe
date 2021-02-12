@@ -130,7 +130,7 @@ def plot_files(dss, **args):
         else:
             plt.savefig(filename, **options_savefig)
 
-        remove_collections([cs_rain, cs_snow, labels, an_fc, an_var, an_run, logo])
+        remove_collections([cs_rain, cs_snow, an_fc, an_var, an_run, logo])
         if projection == 'euratl':
             remove_collections([vals])
 

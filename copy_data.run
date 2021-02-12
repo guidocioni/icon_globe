@@ -11,7 +11,7 @@ echo "--------------------------------------------------------------------------
 export MODEL_DATA_FOLDER="/tmp/icon-globe/"
 export HOME_FOLDER=$(pwd)
 export N_CONCUR_PROCESSES=12 
-export NCFTP_BOOKMARK="altervista"
+export NCFTP_BOOKMARK="mid"
 export REMAP=true
 DATA_DOWNLOAD=true
 DATA_PLOTTING=true
@@ -132,9 +132,9 @@ if [ "$DATA_UPLOAD" = true ]; then
 	#
 	images_output=("thetae_850" "gph_500" "winds10m" "precip_clouds" "winds_jet" "precip_acc" "pv_250" "gpt_50" "winter")
 	# suffix for naming
-	projections_output=("" "us/" "world/" "euratl/" "nh_polar/")
+	projections_output=("euratl/" "" "nh_polar/" "world/" "us/")
 	# remote folder on server
-	projections_output_folder=("icon_globe" "icon_us" "icon_world" "icon_euratl" "icon_nh_polar")
+	projections_output_folder=("icon_euratl" "icon_globe" "icon_nh_polar" "icon_world" "icon_us")
 
 	# Create a lisf of all the images to upload 
 	upload_elements=()

@@ -609,11 +609,11 @@ def add_vals_on_map(ax, projection, var, levels, density=50,
             if lcolors:
                 at.append(ax.annotate(('%d'%var[ilat, ilon]), (lons[ilon] + shift_x, lats[ilat] + shift_y),
                                   color = m.to_rgba(float(var[ilat, ilon])), weight='bold', fontsize=fontsize,
-                                  path_effects=[path_effects.withStroke(linewidth=1, foreground="black")], zorder=5))
+                                  path_effects=[path_effects.withStroke(linewidth=1, foreground="white")], zorder=5))
 
             else:
                 at.append(ax.annotate(('%d'%var[ilat, ilon]), (lons[ilon] + shift_x, lats[ilat] + shift_y),
                                  color = 'white', weight='bold', fontsize=fontsize,
-                                  path_effects=[path_effects.withStroke(linewidth=1, foreground="black")], zorder=5))
+                                  path_effects=[path_effects.withStroke(linewidth=1, foreground="white")], zorder=5))
 
     return at

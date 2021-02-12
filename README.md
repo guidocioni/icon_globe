@@ -1,7 +1,7 @@
 # icon_globe
 Download and plot ICON data over the global domain.
 
-![Plotting sample](http://guidocioni.altervista.org/icon_world/thetae_850/thetae_850_0.png)
+![Plotting sample](https://maps.meteoindiretta.it/icon_world/thetae_850/thetae_850_0.png)
 
 In the following repository I include a fully-functional suite of scripts 
 needed to download, merge and plot data from the ICON model,
