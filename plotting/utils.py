@@ -30,7 +30,7 @@ apiURL_places = "https://api.mapbox.com/geocoding/v5/mapbox.places"
 if 'MODEL_DATA_FOLDER' in os.environ:
     folder = os.environ['MODEL_DATA_FOLDER']
 else:
-    folder = '/tmp/icon-globe/'
+    folder = '/home/ekman/ssd/guido/icon-globe/'
 input_file=folder+'ICON_*.nc' 
 folder_images = folder
 chunks_size = 10
@@ -57,7 +57,9 @@ subfolder_images={
     'nh_polar' : folder_images+'nh_polar',
     'euratl': folder_images+'euratl',
     'us' : folder_images+'us',
-    'world': folder_images+'world' 
+    'world': folder_images+'world',
+    'nh_shift': folder_images+'nh_shift',
+    'mexico': folder_images
 }
 
 folder_glyph = home_folder + '/plotting/yrno_png/'
@@ -113,7 +115,15 @@ proj_defs = {
     'nh':
     {
         'projection': 'nsper',
-        'lon_0': -25,
+        'lon_0': -15,
+        'lat_0': 50,
+        'resolution': 'l',
+        'satellite_height': 4e6,
+    },
+    'nh_shift':
+    {
+        'projection': 'nsper',
+        'lon_0': 0,
         'lat_0': 50,
         'resolution': 'l',
         'satellite_height': 4e6,
@@ -168,6 +178,15 @@ proj_defs = {
         'urcrnrlat': 56,
         'resolution': 'i',
         'epsg': 4269
+    },
+    'mexico':
+    {
+        'projection': 'cyl',
+        'llcrnrlon': -102.66,
+        'llcrnrlat': 20.84,
+        'urcrnrlon': -77.61,
+        'urcrnrlat': 36.74,
+        'resolution': 'i',
     }
 }
 
@@ -213,7 +232,7 @@ def read_dataset(variables = ['T_2M', 'TD_2M'], level=None,
                                    "lat": xr.DataArray(latitude, dims=['ncells'])
                                    })
 
-    if projection and (projection not in ['nh', 'world', 'us', 'nh_polar']):
+    if projection and (projection not in ['nh', 'world', 'us', 'nh_polar', 'nh_shift']):
         proj_options = proj_defs[projection]
         if remapped:
             dset = dset.sel(lat=slice(proj_options['llcrnrlat'],

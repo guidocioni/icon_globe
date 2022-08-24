@@ -44,7 +44,7 @@ def main():
     # Create a mask to retain only the points inside the globe
     # to avoid a bug in basemap and a problem in matplotlib
     dset = dset.load()
-    dset['prmsl'].metpy.convert_units('hPa')
+    dset['prmsl'] = dset['prmsl'].metpy.convert_units('hPa').metpy.dequantify()
 
     levels_mslp = np.arange(dset['prmsl'].min().astype("int"),
         dset['prmsl'].max().astype("int"), 7.)

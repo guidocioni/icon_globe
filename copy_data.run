@@ -8,14 +8,14 @@ echo "icon-globe: Starting processing of icon model data - `date`"
 echo "----------------------------------------------------------------------------------------------"
 
 # Folder to be used to download and process data
-export MODEL_DATA_FOLDER="/tmp/icon-globe/"
+export MODEL_DATA_FOLDER="/home/ekman/ssd/guido/icon-globe/"
 export HOME_FOLDER=$(pwd)
 export N_CONCUR_PROCESSES=12 
 export NCFTP_BOOKMARK="mid"
 export REMAP=true
-DATA_DOWNLOAD=true
+DATA_DOWNLOAD=false
 DATA_PLOTTING=true
-DATA_UPLOAD=true
+DATA_UPLOAD=false
 
 ##### LOAD functions to download model data
 . ./functions_download_dwd.sh

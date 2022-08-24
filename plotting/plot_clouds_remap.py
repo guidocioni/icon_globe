@@ -54,7 +54,7 @@ def main():
 
     dset = compute_rate(dset)
     dset = dset.drop(['lon', 'lat', 'RAIN_GSP', 'RAIN_CON', 'SNOW_GSP', 'SNOW_CON']).load()
-    dset['prmsl'].metpy.convert_units('hPa')
+    dset['prmsl'] = dset['prmsl'].metpy.convert_units('hPa').metpy.dequantify()
     levels_mslp   = np.arange(dset['prmsl'].min().astype("int"),
         dset['prmsl'].max().astype("int"), 7.)
 

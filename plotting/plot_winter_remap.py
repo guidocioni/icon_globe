@@ -38,7 +38,7 @@ def main():
     rain = (rain_acc - rain_acc[0, :, :])
     rain = xr.DataArray(rain, name='rain_increment')
 
-    dset.sde.metpy.convert_units('cm')
+    dset['sde'] = dset['sde'].metpy.convert_units('cm').metpy.dequantify()
     dset = compute_snow_change(dset)
 
     dset = xr.merge([dset, rain])

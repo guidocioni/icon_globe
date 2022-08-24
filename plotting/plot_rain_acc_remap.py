@@ -30,7 +30,7 @@ def main():
     """In the main function we basically read the files and prepare the variables to be plotted.
     This is not included in utils.py as it can change from case to case."""
     dset = read_dataset(variables=['TOT_PREC', 'PMSL'], remapped=True, projection=projection)
-    dset['prmsl'].metpy.convert_units('hPa')
+    dset['prmsl'] = dset['prmsl'].metpy.convert_units('hPa').metpy.dequantify()
 
     levels_precip = list(np.arange(1, 50, 0.4)) + \
                     list(np.arange(51, 100, 2)) +\
@@ -46,8 +46,9 @@ def main():
     m, x, y, mask = get_projection(dset, projection, remapped=True)
     # Subset dataset only on the area
     dset = dset.where(mask, drop=True)
-    m.drawmapboundary(fill_color='whitesmoke')
-    m.fillcontinents(color='lightgray',lake_color='whitesmoke', zorder=0)
+    m.arcgisimage(service='Canvas/World_Dark_Gray_Base', xpixels = 1000)
+    #m.drawmapboundary(fill_color='whitesmoke')
+    #m.fillcontinents(color='lightgray',lake_color='whitesmoke', zorder=0)
 
     dset = dset.load()
 

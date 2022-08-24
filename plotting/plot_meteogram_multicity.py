@@ -49,7 +49,7 @@ for city in cities:# This works regardless if cities is either single value or a
     icell = np.argmin(np.sqrt((dset.clon-lon)**2+(dset.clat-lat)**2))
     dset_city =  dset.sel(ncells=icell, cell=icell)
     height = hsurf.sel(ncells=icell)
-    dset_city['2t'].metpy.convert_units('degC')
+    dset_city['2t'] =     dset_city['2t'].metpy.convert_units('degC').metpy.dequantify(
 
     rain_acc = dset_city['RAIN_GSP'] + dset_city['RAIN_CON']
     snow_acc = dset_city['SNOW_GSP'] + dset_city['SNOW_CON']

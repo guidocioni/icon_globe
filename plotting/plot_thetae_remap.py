@@ -32,7 +32,7 @@ def main():
     This is not included in utils.py as it can change from case to case."""
     dset = read_dataset(variables=['T', 'RELHUM', 'PMSL'], level=85000,
         projection=projection, remapped=True)
-    dset['prmsl'].metpy.convert_units('hPa')
+    dset['prmsl'] = dset['prmsl'].metpy.convert_units('hPa').metpy.dequantify()
 
     levels_thetae = np.arange(-25., 75., 1.)
 

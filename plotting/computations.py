@@ -30,9 +30,9 @@ def compute_spacing(dset):
 
 def compute_theta(dset, tvar='t'):
     pres =  dset['plev'].metpy.unit_array
-    theta = mpcalc.potential_temperature(pres[:, None, None], dset[tvar])
+    theta = mpcalc.potential_temperature(pres[:, None, None], dset[tvar]).metpy.dequantify()
     
-    theta = xr.DataArray(theta.magnitude,
+    theta = xr.DataArray(theta.values,
                            coords= dset[tvar].coords,
                            attrs={'standard_name': 'Potential Temperature',
                                   'units': theta.units},
@@ -51,15 +51,16 @@ def compute_pv(dset):
     lats = dset['lat'].metpy.unit_array
     pres =  dset['plev'].metpy.unit_array
     theta = dset['theta'].values[:] * units(str(dset['theta'].units))
-    pv = mpcalc.potential_vorticity_baroclinic(theta,
-                                               pres[:, None, None],
-                                               dset['u'],
-                                               dset['v'],
-                                               dx[None, :, :], dy[None, :, :],
-                                               lats[None, :, None]
+    pv = mpcalc.potential_vorticity_baroclinic(potential_temperature=theta,
+                                               pressure=pres[:, None, None],
+                                               u=dset['u'],
+                                               v=dset['v'],
+                                               dx=dx[None, :, :],
+                                               dy=dy[None, :, :],
+                                               latitude=lats[None, :, None]
                                                )
     
-    pv = xr.DataArray(pv.magnitude,
+    pv = xr.DataArray(np.array(pv),
                        coords=dset['u'].coords,
                        attrs={'standard_name': 'Potential Vorticity',
                               'units': pv.units},
@@ -76,36 +77,30 @@ def compute_geopot_height(dset, zvar='z', level=None):
         zlevel = dset[zvar].sel(plev=level)
     else:
         zlevel = dset[zvar]
-    gph = mpcalc.geopotential_to_height(zlevel)
-    gph = xr.DataArray(gph.magnitude,
+    gph = mpcalc.geopotential_to_height(zlevel).metpy.dequantify()
+    gph = xr.DataArray(gph.values,
                        coords=zlevel.coords,
                        attrs={'standard_name': 'geopotential height',
                               'units': gph.units},
                        name='geop')
 
-    out = xr.merge([dset, gph])
-    out.attrs = dset.attrs
-
-    return out
+    return xr.merge([dset, gph])
 
 
 def compute_thetae(dset, tvar='t', rvar='r'):
-    rh = mpcalc.dewpoint_from_relative_humidity(dset['t'],
-                                                dset['r'] / 100.)
+    rh = mpcalc.dewpoint_from_relative_humidity(dset[tvar],
+                                                dset[rvar] / 100.)
     theta_e = mpcalc.equivalent_potential_temperature(850 * units.hPa,
-                                                      dset['t'],
-                                                      rh).to('degC')
-
-    theta_e = xr.DataArray(theta_e.magnitude,
-                           coords= dset['t'].coords,
+                                                      dset[tvar],
+                                                      rh)
+    theta_e = theta_e.metpy.convert_units('degC').metpy.dequantify()
+    theta_e = xr.DataArray(theta_e.values,
+                           coords= dset[tvar].coords,
                            attrs={'standard_name': 'Equivalent potential temperature',
                                   'units': theta_e.units},
                             name='theta_e')
 
-    out = xr.merge([dset, theta_e])
-    out.attrs = dset.attrs
-
-    return out
+    return xr.merge([dset, theta_e])
 
 
 def compute_snow_change(dset, snowvar='sde'):
@@ -148,16 +143,13 @@ def compute_rain_snow_change(dset):
 
 
 def compute_wind_speed(dset, uvar='u', vvar='v'):
-    wind = mpcalc.wind_speed(dset[uvar], dset[vvar]).to(units.kph)
+    wind = mpcalc.wind_speed(dset[uvar], dset[vvar]).metpy.convert_units('kph').metpy.dequantify()
     wind = xr.DataArray(wind, coords=dset[uvar].coords,
                            attrs={'standard_name': 'wind intensity',
                                   'units': wind.units},
                                   name='wind_speed')
 
-    out = xr.merge([dset, wind])
-    out.attrs = dset.attrs
-
-    return out
+    return xr.merge([dset, wind])
 
 
 def compute_rate(dset):
