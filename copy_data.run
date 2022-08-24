@@ -13,9 +13,9 @@ export HOME_FOLDER=$(pwd)
 export N_CONCUR_PROCESSES=12 
 export NCFTP_BOOKMARK="mid"
 export REMAP=true
-DATA_DOWNLOAD=false
+DATA_DOWNLOAD=true
 DATA_PLOTTING=true
-DATA_UPLOAD=false
+DATA_UPLOAD=true
 
 ##### LOAD functions to download model data
 . ./functions_download_dwd.sh
