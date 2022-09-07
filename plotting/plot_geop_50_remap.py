@@ -33,8 +33,8 @@ def main():
     dset = read_dataset(variables=['T', 'FI'], level=[5000],
                         projection=projection, remapped=True)
 
-    levels_temp = np.arange(-86, -18, 1)
-    levels_gph = np.arange(19700., 20500., 250.)
+    levels_temp = np.arange(-90, -18, 1)
+    levels_gph = np.arange(19500., 21000., 150.)
 
     cmap = get_colormap('temp_meteociel')
 
@@ -84,12 +84,12 @@ def plot_files(dss, **args):
                                  data['t'], colors='gray',
                                  levels=args['levels_temp'][::4],
                                  linestyles='solid',
-                                 linewidths=0.3)
+                                 linewidths=0.2)
 
 
         c = args['ax'].contour(args['x'], args['y'],
                                   data['geop'], levels=args['levels_gph'],
-                                  colors='white', linewidths=1.)
+                                  colors='white', linewidths=1.25)
 
         labels = args['ax'].clabel(c, c.levels, inline=True, fmt='%4.0f' , fontsize=5)
 

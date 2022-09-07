@@ -1,3 +1,4 @@
+import matplotlib.pyplot as plt
 import numpy as np
 from multiprocessing import Pool
 from functools import partial
@@ -10,14 +11,13 @@ if not debug:
     import matplotlib
     matplotlib.use('Agg')
 
-import matplotlib.pyplot as plt
 
-# The one employed for the figure name when exported 
+# The one employed for the figure name when exported
 variable_name = 'winter'
 
 print_message('Starting script to plot '+variable_name)
 
-# Get the projection as system argument from the call so that we can 
+# Get the projection as system argument from the call so that we can
 # span multiple instances of this script outside
 if not sys.argv[1:]:
     print_message(
@@ -44,7 +44,8 @@ def main():
     dset = xr.merge([dset, rain])
     dset.attrs = attrs
 
-    levels_snow = (0.25, 0.5, 1, 2.5, 5, 10, 15, 20, 25, 30, 40, 50, 70, 90, 150)
+    levels_snow = (0.25, 0.5, 1, 2.5, 5, 10, 15,
+                   20, 25, 30, 40, 50, 70, 90, 150)
     levels_rain = (10, 15, 25, 35, 50, 75, 100, 125, 150)
     levels_snowlmt = np.arange(0., 3000., 500.)
 
@@ -57,21 +58,21 @@ def main():
     m, x, y, mask = get_projection(dset, projection, remapped=True)
     dset = dset.where(mask, drop=True)
     m.drawmapboundary(fill_color='whitesmoke')
-    m.fillcontinents(color='lightgray',lake_color='whitesmoke', zorder=0)
+    m.fillcontinents(color='lightgray', lake_color='whitesmoke', zorder=1)
 
     dset = dset.drop(['RAIN_GSP', 'RAIN_CON']).load()
 
     # All the arguments that need to be passed to the plotting function
     args = dict(m=m, x=x, y=y, ax=ax,
-             levels_snowlmt=levels_snowlmt, levels_rain=levels_rain,
-             levels_snow=levels_snow, norm_snow=norm_snow,
-             cmap_rain=cmap_rain, cmap_snow=cmap_snow, norm_rain=norm_rain)
+                levels_snowlmt=levels_snowlmt, levels_rain=levels_rain,
+                levels_snow=levels_snow, norm_snow=norm_snow,
+                cmap_rain=cmap_rain, cmap_snow=cmap_snow, norm_rain=norm_rain)
 
     print_message('Pre-processing finished, launching plotting scripts')
     if debug:
         plot_files(dset.isel(time=slice(-2, -1)), **args)
     else:
-        # Parallelize the plotting by dividing into chunks and processes 
+        # Parallelize the plotting by dividing into chunks and processes
         dss = chunks_dataset(dset, chunks_size)
         plot_files_param = partial(plot_files, **args)
         p = Pool(processes)
@@ -85,30 +86,32 @@ def plot_files(dss, **args):
         data = dss.sel(time=time_sel)
         time, run, cum_hour = get_time_run_cum(data)
         # Build the name of the output image
-        filename = subfolder_images[projection] + '/' + variable_name + '_%s.png' % cum_hour
+        filename = subfolder_images[projection] + \
+            '/' + variable_name + '_%s.png' % cum_hour
 
         cs_rain = args['ax'].contourf(args['x'], args['y'], data['rain_increment'],
-                         extend='max', cmap=args['cmap_rain'], norm=args['norm_rain'],
-                         levels=args['levels_rain'], alpha=0.5, antialiased = True)
+                                      extend='max', cmap=args['cmap_rain'], norm=args['norm_rain'],
+                                      levels=args['levels_rain'], alpha=0.5, antialiased=True)
         cs_snow = args['ax'].contourf(args['x'], args['y'], data['snow_increment'],
-                         extend='max', cmap=args['cmap_snow'], norm=args['norm_snow'],
-                         levels=args['levels_snow'], antialiased = True)
+                                      extend='max', cmap=args['cmap_snow'], norm=args['norm_snow'],
+                                      levels=args['levels_snow'], antialiased=True)
 
         if projection == 'euratl':
             vals = add_vals_on_map(args['ax'],
-                               projection,
-                               data['snow_increment'].where(data['snow_increment'] >= 1),
-                               args['levels_snow'],
-                               cmap=args['cmap_snow'],
-                               norm=args['norm_snow'],
-                               density=8)
+                                   projection,
+                                   data['snow_increment'].where(
+                                       data['snow_increment'] >= 1),
+                                   args['levels_snow'],
+                                   cmap=args['cmap_snow'],
+                                   norm=args['norm_snow'],
+                                   density=8)
 
         an_fc = annotation_forecast(args['ax'], time)
         an_var = annotation(args['ax'], 'New snow and accumulated rain (since run start)',
-            loc='lower left', fontsize=6)
+                            loc='lower left', fontsize=6)
         an_run = annotation_run(args['ax'], run)
         logo = add_logo_on_map(ax=args['ax'],
-                                zoom=0.1, pos=(0.95, 0.08))
+                               zoom=0.1, pos=(0.95, 0.08))
 
         if first:
             if projection in ['nh', 'nh_polar', 'us']:
@@ -119,10 +122,10 @@ def plot_files(dss, **args):
                 ax_cbar_2 = plt.gcf().add_axes([0.55, 0.17, 0.2, 0.01])
 
             cbar_snow = plt.gcf().colorbar(cs_snow, cax=ax_cbar, orientation='horizontal',
-             label='Snow')
+                                           label='Snow')
             cbar_rain = plt.gcf().colorbar(cs_rain, cax=ax_cbar_2, orientation='horizontal',
-             label='Rain')
-            cbar_snow.ax.tick_params(labelsize=8) 
+                                           label='Rain')
+            cbar_snow.ax.tick_params(labelsize=8)
             cbar_rain.ax.tick_params(labelsize=8)
 
         if debug:
@@ -134,13 +137,13 @@ def plot_files(dss, **args):
         if projection == 'euratl':
             remove_collections([vals])
 
-        first = False 
+        first = False
 
 
 if __name__ == "__main__":
     import time
-    start_time=time.time()
+    start_time = time.time()
     main()
-    elapsed_time=time.time()-start_time
-    print_message("script took " + time.strftime("%H:%M:%S", time.gmtime(elapsed_time)))
-
+    elapsed_time = time.time()-start_time
+    print_message("script took " + time.strftime("%H:%M:%S",
+                  time.gmtime(elapsed_time)))

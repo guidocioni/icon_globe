@@ -34,7 +34,7 @@ def main():
         projection=projection, remapped=True)
     dset['prmsl'] = dset['prmsl'].metpy.convert_units('hPa').metpy.dequantify()
 
-    levels_thetae = np.arange(-25., 75., 1.)
+    levels_thetae = np.arange(-35., 85., 2.)
 
     _ = plt.figure(figsize=(figsize_x, figsize_y))
     ax = plt.gca()
@@ -80,9 +80,16 @@ def plot_files(dss, **args):
         # Unfortunately m.contour with tri = True doesn't work because of a bug 
         c = args['ax'].contour(args['x'], args['y'], data['prmsl'],
                              levels=args['levels_mslp'],
-                             colors='white', linewidths=0.5)
+                             colors='white', linewidths=1)
 
         labels = args['ax'].clabel(c, c.levels, inline=True, fmt='%4.0f' , fontsize=5)
+
+        
+        maxlabels = plot_maxmin_points(args['ax'], args['x'], args['y'], data['prmsl'],
+                                        'max', 200, symbol='H', color='royalblue', random=True)
+        minlabels = plot_maxmin_points(args['ax'], args['x'], args['y'], data['prmsl'],
+                                        'min', 200, symbol='L', color='coral', random=True)
+        
         an_fc = annotation_forecast(args['ax'], time)
         an_var = annotation(args['ax'], 'Equivalent Potential Temperature @850hPa [C] and MSLP [hPa]',
             loc='lower left', fontsize=6)
@@ -98,7 +105,7 @@ def plot_files(dss, **args):
         else:
             plt.savefig(filename, **options_savefig)        
 
-        remove_collections([c, cs, labels, an_fc, an_var, an_run, logo])
+        remove_collections([c, cs, labels, an_fc, an_var, an_run, logo, maxlabels, minlabels])
 
         first = False 
 

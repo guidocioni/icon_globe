@@ -46,9 +46,8 @@ def main():
     m, x, y, mask = get_projection(dset, projection, remapped=True)
     # Subset dataset only on the area
     dset = dset.where(mask, drop=True)
-    m.arcgisimage(service='Canvas/World_Dark_Gray_Base', xpixels = 1000)
-    #m.drawmapboundary(fill_color='whitesmoke')
-    #m.fillcontinents(color='lightgray',lake_color='whitesmoke', zorder=0)
+    m.drawmapboundary(fill_color='whitesmoke')
+    m.fillcontinents(color='lightgray',lake_color='whitesmoke', zorder=1)
 
     dset = dset.load()
 
@@ -92,6 +91,12 @@ def plot_files(dss, **args):
 
 
         labels = args['ax'].clabel(c, c.levels, inline=True, fmt='%4.0f' , fontsize=5)
+
+        maxlabels = plot_maxmin_points(args['ax'], args['x'], args['y'], data['prmsl'],
+                                        'max', 200, symbol='H', color='royalblue', random=True)
+        minlabels = plot_maxmin_points(args['ax'], args['x'], args['y'], data['prmsl'],
+                                        'min', 200, symbol='L', color='coral', random=True)
+        
         an_fc = annotation_forecast(args['ax'], time)
         an_var = annotation(args['ax'], 'Accumulated precipitation [mm] and MSLP [hPa]',
             loc='lower left', fontsize=6)
@@ -108,7 +113,7 @@ def plot_files(dss, **args):
         else:
             plt.savefig(filename, **options_savefig)        
 
-        remove_collections([c, cs, labels, an_fc, an_var, an_run, logo])
+        remove_collections([c, cs, labels, an_fc, an_var, an_run, logo, maxlabels, minlabels])
 
         first = False
 

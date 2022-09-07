@@ -34,7 +34,7 @@ else:
 input_file=folder+'ICON_*.nc' 
 folder_images = folder
 chunks_size = 10
-processes = 8
+processes = 4
 figsize_x = 12
 figsize_y = 9
 

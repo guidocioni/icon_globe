@@ -48,8 +48,8 @@ def compute_theta(dset, tvar='t'):
 def compute_pv(dset):
     dx = dset['dx'].values[:] * units(str(dset['dx'].units))
     dy = dset['dy'].values[:] * units(str(dset['dy'].units))
-    lats = dset['lat'].metpy.unit_array
-    pres =  dset['plev'].metpy.unit_array
+    lats = dset['lat']
+    pres =  dset['plev']
     theta = dset['theta'].values[:] * units(str(dset['theta'].units))
     pv = mpcalc.potential_vorticity_baroclinic(potential_temperature=theta,
                                                pressure=pres[:, None, None],

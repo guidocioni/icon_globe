@@ -45,7 +45,7 @@ export -f download_merge_2d_variable_icon_globe
 download_merge_3d_variable_icon_globe()
 {
 	filename="icon_global_icosahedral_pressure-level_${year}${month}${day}${run}_*_${1}.grib2"
-	filename_grep="icon_global_icosahedral_pressure-level_${year}${month}${day}${run}_(${hours_download})_(1000|900|850|700|600|500|300|250|150|50)_${1}.grib2.bz2"
+	filename_grep="icon_global_icosahedral_pressure-level_${year}${month}${day}${run}_(${hours_download})_(1000|850|700|500|250|50)_${1}.grib2.bz2"
 	url="https://opendata.dwd.de/weather/nwp/icon/grib/${run}/${1,,}/"
 	if [ ! -f "${1}_${year}${month}${day}${run}_global.nc" ]; then
 		listurls $filename_grep $url | parallel -j 10 get_and_extract_one {}

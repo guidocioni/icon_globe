@@ -40,14 +40,14 @@ def main():
     # Subset dataset only on the area
     dset = dset.where(mask, drop=True)
     m.drawmapboundary(fill_color='whitesmoke')
-    m.fillcontinents(color='lightgray',lake_color='whitesmoke', zorder=0)
+    m.fillcontinents(color='lightgray', lake_color='whitesmoke', zorder=1)
     # Create a mask to retain only the points inside the globe
     # to avoid a bug in basemap and a problem in matplotlib
     dset = dset.load()
     dset['prmsl'] = dset['prmsl'].metpy.convert_units('hPa').metpy.dequantify()
 
     levels_mslp = np.arange(dset['prmsl'].min().astype("int"),
-        dset['prmsl'].max().astype("int"), 7.)
+        dset['prmsl'].max().astype("int"), 5.)
 
     # All the arguments that need to be passed to the plotting function
     args=dict(m=m, x=x, y=y, ax=ax,
@@ -71,7 +71,7 @@ def plot_files(dss, **args):
     first = True
     for time_sel in dss.time:
         data = dss.sel(time=time_sel)
-        data['VMAX_10M'].metpy.convert_units('kph')
+        data['VMAX_10M'] = data['VMAX_10M'].metpy.convert_units('kph').metpy.dequantify()
         time, run, cum_hour = get_time_run_cum(data)
         # Build the name of the output image
         filename = subfolder_images[projection] + '/' + variable_name + '_%s.png' % cum_hour
@@ -80,14 +80,14 @@ def plot_files(dss, **args):
                          extend='max', cmap=args['cmap'], levels=args['levels_winds_10m'])
 
         c = args['ax'].contour(args['x'], args['y'], data['prmsl'],
-                             levels=args['levels_mslp'], colors='black', linewidths=0.5)
+                             levels=args['levels_mslp'], colors='red', linewidths=1)
 
         labels = args['ax'].clabel(c, c.levels, inline=True, fmt='%4.0f' , fontsize=5)
 
         maxlabels = plot_maxmin_points(args['ax'], args['x'], args['y'], data['prmsl'],
-                                        'max', 200, symbol='H', color='royalblue', random=True)
+                                        'max', 180, symbol='H', color='royalblue', random=True)
         minlabels = plot_maxmin_points(args['ax'], args['x'], args['y'], data['prmsl'],
-                                        'min', 200, symbol='L', color='coral', random=True)
+                                        'min', 180, symbol='L', color='coral', random=True)
 
         if projection != 'world':
             density = 15

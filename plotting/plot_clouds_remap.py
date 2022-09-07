@@ -56,7 +56,7 @@ def main():
     dset = dset.drop(['lon', 'lat', 'RAIN_GSP', 'RAIN_CON', 'SNOW_GSP', 'SNOW_CON']).load()
     dset['prmsl'] = dset['prmsl'].metpy.convert_units('hPa').metpy.dequantify()
     levels_mslp   = np.arange(dset['prmsl'].min().astype("int"),
-        dset['prmsl'].max().astype("int"), 7.)
+        dset['prmsl'].max().astype("int"), 5.)
 
     # All the arguments that need to be passed to the plotting function
     args=dict(m=m, x=x, y=y, ax=ax,
