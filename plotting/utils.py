@@ -190,8 +190,8 @@ proj_defs = {
     }
 }
 
-def read_dataset(variables = ['T_2M', 'TD_2M'], level=None,
-                 engine='scipy', projection=None, remapped=False):
+def read_dataset(variables=['T_2M', 'TD_2M'], level=None,
+                 engine='netcdf4', projection=None, remapped=False):
     """Wrapper to initialize the dataset"""
     # Create the regex for the files with the needed variables
     variables_search = '('+'|'.join(variables)+')'
@@ -199,31 +199,28 @@ def read_dataset(variables = ['T_2M', 'TD_2M'], level=None,
     # In the future we can use Run/Date to have a more selective glob pattern
 
     if remapped:
-        files = glob(folder+ 'remap/*.nc')
+        files = glob(folder + 'remap/*.nc')
     else:
-        files = glob(folder+ '*.nc')
+        files = glob(folder + '*.nc')
 
     run = pd.to_datetime(re.findall(r'(?:\d{10})', files[0])[0],
-               format='%Y%m%d%H')
+                         format='%Y%m%d%H')
 
-    # find only the files with the variables that we need 
-    needed_files = [f for f in files if re.search(r'/%s(?:_\d{10})' % variables_search, f)]
+    # find only the files with the variables that we need
+    needed_files = [f for f in files if re.search(
+        r'/%s(?:_\d{10})' % variables_search, f)]
     if remapped:
-        chunks = {'time': 2, 'lon': 100, 'lat': 100}
+        chunks = {'time': 15}
     else:
-        chunks={'time': 10, 'ncells': 1000}
+        chunks = {'time': 10, 'ncells': 1000}
 
     dset = xr.open_mfdataset(needed_files,
+                            #  chunks=chunks,
                              preprocess=preprocess,
-                             chunks=chunks,
                              engine=engine)
-    # NOTE!! Even though we use open_mfdataset, which creates a Dask array, we then 
-    # load the dataset into memory since otherwise the object cannot be pickled by 
-    # multiprocessing
-    dset = dset.metpy.parse_cf()
     if level:
         dset = dset.sel(plev=level, method='nearest').squeeze()
-    if not remapped:# add coordinates to dataset
+    if not remapped:  # add coordinates to dataset
         files = glob(folder+'invariant_*_global.nc')
         invar = xr.open_dataset(files[0])
         longitude = invar['tlon'].values
@@ -262,12 +259,19 @@ def get_time_run_cum(dset):
 def preprocess(ds):
     '''Additional preprocessing step to apply to the datasets'''
     # correct gust attributes typo
+    done = 0
     if 'VMAX_10M' in ds.variables.keys():
         ds['VMAX_10M'].attrs['units'] = 'm/s'
+        done += 1
     if 'plev_bnds' in ds.variables.keys():
         ds = ds.drop('plev_bnds')
+        done += 1
 
-    return ds.squeeze(drop=True)
+    if done >= 1:
+        return ds.squeeze(drop=True)
+    else:
+        return ds
+
 
 def print_message(message):
     """Formatted print"""
@@ -526,6 +530,10 @@ def get_colormap_norm(cmap_type, levels):
                          extend='max')
     elif cmap_type == "snow_wxcharts":
         colors_tuple = pd.read_csv(home_folder + '/plotting/cmap_snow_wxcharts.rgba').values    
+        cmap, norm = from_levels_and_colors(levels, sns.color_palette(colors_tuple, n_colors=len(levels)),
+                         extend='max')
+    elif cmap_type == "winds_wxcharts":
+        colors_tuple = pd.read_csv(home_folder + '/plotting/cmap_winds_wxcharts.rgba').values    
         cmap, norm = from_levels_and_colors(levels, sns.color_palette(colors_tuple, n_colors=len(levels)),
                          extend='max')
 

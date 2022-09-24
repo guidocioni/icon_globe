@@ -97,7 +97,7 @@ if [ "$DATA_PLOTTING" = true ]; then
 			 "plot_winter_remap.py")
 
 	projections=("euratl" "nh" "nh_polar" "us" "world")
-	parallel -j 4 python ::: "${scripts[@]}" ::: "${projections[@]}"
+	parallel -j 3 --delay 5 python ::: "${scripts[@]}" ::: "${projections[@]}"
 	rm ${MODEL_DATA_FOLDER}/*.py
 fi
 
@@ -146,7 +146,7 @@ if [ "$DATA_UPLOAD" = true ]; then
 	# for k in "${upload_elements[@]}"; do
 	# 	ncftpput -R -v -DD -m  ${NCFTP_BOOKMARK} ${k}
 	# done
-	num_procs=5
+	num_procs=6
 	num_iters=${#upload_elements[@]}
 	num_jobs="\j"  # The prompt escape for number of jobs currently running
 	for ((i=0; i<num_iters; i++)); do
