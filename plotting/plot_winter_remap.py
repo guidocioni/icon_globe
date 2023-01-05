@@ -2,7 +2,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 from multiprocessing import Pool
 from functools import partial
-from utils import *
+import utils
+import xarray as xr
 import sys
 from computations import compute_snow_change
 
@@ -15,12 +16,12 @@ if not debug:
 # The one employed for the figure name when exported
 variable_name = 'winter'
 
-print_message('Starting script to plot '+variable_name)
+utils.print_message('Starting script to plot '+variable_name)
 
 # Get the projection as system argument from the call so that we can
 # span multiple instances of this script outside
 if not sys.argv[1:]:
-    print_message(
+    utils.print_message(
         'Projection not defined, falling back to default (euratl)')
     projection = 'euratl'
 else:
@@ -30,8 +31,8 @@ else:
 def main():
     """In the main function we basically read the files and prepare the variables to be plotted.
     This is not included in utils.py as it can change from case to case."""
-    dset = read_dataset(variables=['RAIN_GSP', 'RAIN_CON', 'H_SNOW'],
-                        projection=projection, remapped=True)
+    dset = utils.read_dataset(variables=['RAIN_GSP', 'RAIN_CON', 'H_SNOW'],
+                              projection=projection, remapped=True)
 
     attrs = dset.attrs
     rain_acc = dset['RAIN_GSP'] + dset['RAIN_CON']
@@ -49,13 +50,14 @@ def main():
     levels_rain = (10, 15, 25, 35, 50, 75, 100, 125, 150)
     levels_snowlmt = np.arange(0., 3000., 500.)
 
-    cmap_snow, norm_snow = get_colormap_norm("snow_wxcharts", levels_snow)
-    cmap_rain, norm_rain = get_colormap_norm("rain", levels_rain)
+    cmap_snow, norm_snow = utils.get_colormap_norm(
+        "snow_wxcharts", levels_snow)
+    cmap_rain, norm_rain = utils.get_colormap_norm("rain", levels_rain)
 
-    _ = plt.figure(figsize=(figsize_x, figsize_y))
+    _ = plt.figure(figsize=(utils.figsize_x, utils.figsize_y))
     ax = plt.gca()
 
-    m, x, y, mask = get_projection(dset, projection, remapped=True)
+    m, x, y, mask = utils.get_projection(dset, projection, remapped=True)
     dset = dset.where(mask, drop=True)
     m.drawmapboundary(fill_color='whitesmoke')
     m.fillcontinents(color='lightgray', lake_color='whitesmoke', zorder=1)
@@ -68,14 +70,14 @@ def main():
                 levels_snow=levels_snow, norm_snow=norm_snow,
                 cmap_rain=cmap_rain, cmap_snow=cmap_snow, norm_rain=norm_rain)
 
-    print_message('Pre-processing finished, launching plotting scripts')
+    utils.print_message('Pre-processing finished, launching plotting scripts')
     if debug:
         plot_files(dset.isel(time=slice(-2, -1)), **args)
     else:
         # Parallelize the plotting by dividing into chunks and processes
-        dss = chunks_dataset(dset, chunks_size)
+        dss = utils.chunks_dataset(dset, utils.chunks_size)
         plot_files_param = partial(plot_files, **args)
-        p = Pool(processes)
+        p = Pool(utils.processes)
         p.map(plot_files_param, dss)
 
 
@@ -84,9 +86,9 @@ def plot_files(dss, **args):
     first = True
     for time_sel in dss.time:
         data = dss.sel(time=time_sel)
-        time, run, cum_hour = get_time_run_cum(data)
+        time, run, cum_hour = utils.get_time_run_cum(data)
         # Build the name of the output image
-        filename = subfolder_images[projection] + \
+        filename = utils.subfolder_images[projection] + \
             '/' + variable_name + '_%s.png' % cum_hour
 
         cs_rain = args['ax'].contourf(args['x'], args['y'], data['rain_increment'],
@@ -97,45 +99,34 @@ def plot_files(dss, **args):
                                       levels=args['levels_snow'], antialiased=True)
 
         if projection == 'euratl':
-            vals = add_vals_on_map(args['ax'],
-                                   projection,
-                                   data['snow_increment'].where(
-                                       data['snow_increment'] >= 1),
-                                   args['levels_snow'],
-                                   cmap=args['cmap_snow'],
-                                   norm=args['norm_snow'],
-                                   density=8)
+            vals = utils.add_vals_on_map(args['ax'],
+                                         projection,
+                                         data['snow_increment'].where(data['snow_increment'] >= 1),
+                                         args['levels_snow'],
+                                         cmap=args['cmap_snow'],
+                                         norm=args['norm_snow'],
+                                         density=8)
 
-        an_fc = annotation_forecast(args['ax'], time)
-        an_var = annotation(args['ax'], 'New snow and accumulated rain (since run start)',
-                            loc='lower left', fontsize=6)
-        an_run = annotation_run(args['ax'], run)
-        logo = add_logo_on_map(ax=args['ax'],
-                               zoom=0.1, pos=(0.95, 0.08))
+        an_fc = utils.annotation_forecast(args['ax'], time)
+        an_var = utils.annotation(args['ax'], 'New snow and accumulated rain (since run start)',
+                                  loc='lower left', fontsize=6)
+        an_run = utils.annotation_run(args['ax'], run)
 
         if first:
-            if projection in ['nh', 'nh_polar', 'us']:
-                ax_cbar = plt.gcf().add_axes([0.3, 0.09, 0.2, 0.01])
-                ax_cbar_2 = plt.gcf().add_axes([0.55, 0.09, 0.2, 0.01])
-            else:
-                ax_cbar = plt.gcf().add_axes([0.3, 0.17, 0.2, 0.01])
-                ax_cbar_2 = plt.gcf().add_axes([0.55, 0.17, 0.2, 0.01])
-
+            ax_cbar, ax_cbar_2 = utils.divide_axis_for_cbar(args['ax'])
             cbar_snow = plt.gcf().colorbar(cs_snow, cax=ax_cbar, orientation='horizontal',
                                            label='Snow')
             cbar_rain = plt.gcf().colorbar(cs_rain, cax=ax_cbar_2, orientation='horizontal',
                                            label='Rain')
-            cbar_snow.ax.tick_params(labelsize=8)
-            cbar_rain.ax.tick_params(labelsize=8)
 
         if debug:
             plt.show(block=True)
         else:
-            plt.savefig(filename, **options_savefig)
+            plt.savefig(filename, **utils.options_savefig)
 
-        remove_collections([cs_rain, cs_snow, an_fc, an_var, an_run, logo])
+        utils.remove_collections([cs_rain, cs_snow, an_fc, an_var, an_run])
         if projection == 'euratl':
-            remove_collections([vals])
+            utils.remove_collections([vals])
 
         first = False
 
@@ -145,5 +136,5 @@ if __name__ == "__main__":
     start_time = time.time()
     main()
     elapsed_time = time.time()-start_time
-    print_message("script took " + time.strftime("%H:%M:%S",
-                  time.gmtime(elapsed_time)))
+    utils.print_message("script took " + time.strftime("%H:%M:%S",
+                                                       time.gmtime(elapsed_time)))

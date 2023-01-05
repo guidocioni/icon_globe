@@ -17,6 +17,7 @@ import re
 import requests
 import json
 from matplotlib.image import imread as read_png
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
 import warnings
 warnings.filterwarnings(
@@ -57,6 +58,7 @@ subfolder_images={
     'nh_polar' : folder_images+'nh_polar',
     'euratl': folder_images+'euratl',
     'us' : folder_images+'us',
+    'us_pacific' : folder_images,
     'world': folder_images+'world',
     'nh_shift': folder_images+'nh_shift',
     'mexico': folder_images
@@ -135,6 +137,14 @@ proj_defs = {
         'lat_0': 45,
         'resolution': 'l',
         'satellite_height': 4e6,
+    },
+    'us_pacific':
+    {
+        'projection': 'nsper',
+        'lon_0': -145,
+        'lat_0': 40,
+        'resolution': 'l',
+        'satellite_height': 2e6,
     },
     'world':
     {
@@ -229,7 +239,7 @@ def read_dataset(variables=['T_2M', 'TD_2M'], level=None,
                                    "lat": xr.DataArray(latitude, dims=['ncells'])
                                    })
 
-    if projection and (projection not in ['nh', 'world', 'us', 'nh_polar', 'nh_shift']):
+    if projection and (projection not in ['nh', 'world', 'us', 'nh_polar', 'nh_shift', 'us_pacific']):
         proj_options = proj_defs[projection]
         if remapped:
             dset = dset.sel(lat=slice(proj_options['llcrnrlat'],
@@ -259,18 +269,12 @@ def get_time_run_cum(dset):
 def preprocess(ds):
     '''Additional preprocessing step to apply to the datasets'''
     # correct gust attributes typo
-    done = 0
     if 'VMAX_10M' in ds.variables.keys():
         ds['VMAX_10M'].attrs['units'] = 'm/s'
-        done += 1
     if 'plev_bnds' in ds.variables.keys():
         ds = ds.drop('plev_bnds')
-        done += 1
 
-    if done >= 1:
-        return ds.squeeze(drop=True)
-    else:
-        return ds
+    return ds.squeeze(drop=True)
 
 
 def print_message(message):
@@ -543,20 +547,21 @@ def get_colormap_norm(cmap_type, levels):
 def remove_collections(elements):
     """Remove the collections of an artist to clear the plot without
     touching the background, which can then be used afterwards."""
-    for element in elements:
-        try:
-            for coll in element.collections: 
-                coll.remove()
-        except AttributeError:
+    if isinstance(elements, list):
+        for element in elements:
             try:
-                for coll in element:
+                for coll in element.collections:
                     coll.remove()
+            except AttributeError:
+                try:
+                    for coll in element:
+                        coll.remove()
+                except ValueError:
+                    print('WARNING: Collection is empty')
+                except TypeError:
+                    element.remove()
             except ValueError:
                 print('WARNING: Collection is empty')
-            except TypeError:
-                element.remove() 
-        except ValueError:
-            print('WARNING: Collection is empty')
 
 
 def plot_maxmin_points(ax, lon, lat, data, extrema, nsize, symbol, color='k',
@@ -644,3 +649,27 @@ def add_vals_on_map(ax, projection, var, levels, density=50,
                                   path_effects=[path_effects.withStroke(linewidth=1, foreground="white")], zorder=5))
 
     return at
+
+
+def divide_axis_for_cbar(ax, width="45%", height="2%", pad=-2, adjust=0.04):
+    '''Using inset_axes, divides axis in two to place the colorbars side to side.
+    Note that we use the bbox explicitlly with padding to adjust the position of the colorbars
+    otherwise they'll come out of the axis (don't really know why)'''
+    ax_cbar = inset_axes(ax,
+                         width=width,
+                         height=height,
+                         loc='lower left',
+                         borderpad=pad,
+                         bbox_to_anchor=(adjust, 0., 1, 1),
+                         bbox_transform=ax.transAxes
+                         )
+    ax_cbar_2 = inset_axes(ax,
+                           width=width,
+                           height=height,
+                           loc='lower right',
+                           borderpad=pad,
+                           bbox_to_anchor=(-adjust, 0., 1, 1),
+                           bbox_transform=ax.transAxes
+                           )
+
+    return ax_cbar, ax_cbar_2

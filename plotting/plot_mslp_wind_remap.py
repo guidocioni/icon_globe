@@ -82,7 +82,7 @@ def plot_files(dss, **args):
                                  extend='max', cmap=args['cmap'], norm=args['norm'], levels=args['levels_winds_10m'])
 
         c = args['ax'].contour(args['x'], args['y'], data['prmsl'],
-                               levels=args['levels_mslp'], colors='red', linewidths=1)
+                               levels=args['levels_mslp'], colors='black', linewidths=1)
 
         labels = args['ax'].clabel(
             c, c.levels, inline=True, fmt='%4.0f', fontsize=5)
@@ -104,18 +104,16 @@ def plot_files(dss, **args):
                                data['10u'][::density, ::density],
                                data['10v'][::density, ::density],
                                scale=scale,
-                               alpha=0.5, color='gray', headwidth=2)
+                               alpha=0.5, color='white', headwidth=2)
 
         an_fc = utils.annotation_forecast(args['ax'], time)
         an_var = utils.annotation(
-            args['ax'], 'Accumulated precipitation [mm] and MSLP [hPa]', loc='lower left', fontsize=6)
+            args['ax'], 'Winds at 10m and MSLP [hPa]', loc='lower left', fontsize=6)
         an_run = utils.annotation_run(args['ax'], run)
-        logo = utils.add_logo_on_map(ax=args['ax'],
-                                     zoom=0.1, pos=(0.95, 0.08))
 
         if first:
             plt.colorbar(cs, orientation='horizontal',
-                         label='Wind [km/h]', pad=0.03, fraction=0.03)
+                         label='Wind [km/h]', pad=0.03, fraction=0.04)
 
         if debug:
             plt.show(block=True)
@@ -123,7 +121,7 @@ def plot_files(dss, **args):
             plt.savefig(filename, **utils.options_savefig)
 
         utils.remove_collections([c, cs, labels, an_fc, an_var,
-                                  an_run, cv, maxlabels, minlabels, logo])
+                                  an_run, cv, maxlabels, minlabels])
 
         first = False
 
