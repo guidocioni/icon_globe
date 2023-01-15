@@ -180,5 +180,5 @@ if __name__ == "__main__":
     start_time = time.time()
     main()
     elapsed_time = time.time()-start_time
-    utils.print_message_message(
+    utils.print_message(
         "script took " + time.strftime("%H:%M:%S", time.gmtime(elapsed_time)))

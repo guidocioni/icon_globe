@@ -48,6 +48,8 @@ mkdir -p ${MODEL_DATA_FOLDER}world
 mkdir -p ${MODEL_DATA_FOLDER}remap
 mkdir -p ${MODEL_DATA_FOLDER}us
 mkdir -p ${MODEL_DATA_FOLDER}euratl
+mkdir -p ${MODEL_DATA_FOLDER}it
+mkdir -p ${MODEL_DATA_FOLDER}de
 mkdir -p ${MODEL_DATA_FOLDER}nh_polar
 
 # Move to the data folder to do processing
@@ -96,7 +98,7 @@ if [ "$DATA_PLOTTING" = true ]; then
 			 "plot_mslp_wind_remap.py" "plot_thetae_remap.py" "plot_geop_50_remap.py" \
 			 "plot_winter_remap.py")
 
-	projections=("euratl" "nh" "nh_polar" "us" "world")
+	projections=("euratl" "nh" "nh_polar" "us" "world" "it" "de")
 	parallel -j 3 --delay 5 python ::: "${scripts[@]}" ::: "${projections[@]}"
 	rm ${MODEL_DATA_FOLDER}/*.py
 fi
@@ -130,9 +132,9 @@ if [ "$DATA_UPLOAD" = true ]; then
 	#
 	images_output=("thetae_850" "gph_500" "winds10m" "precip_clouds" "winds_jet" "precip_acc" "pv_250" "gpt_50" "winter")
 	# suffix for naming
-	projections_output=("euratl/" "" "nh_polar/" "world/" "us/")
+	projections_output=("euratl/" "" "nh_polar/" "world/" "us/" "it/" "de/")
 	# remote folder on server
-	projections_output_folder=("icon_euratl" "icon_globe" "icon_nh_polar" "icon_world" "icon_us")
+	projections_output_folder=("icon_euratl" "icon_globe" "icon_nh_polar" "icon_world" "icon_us" "icon_g_it" "icon_g_de")
 
 	# Create a lisf of all the images to upload 
 	upload_elements=()

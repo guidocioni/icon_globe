@@ -60,6 +60,8 @@ subfolder_images={
     'us' : folder_images+'us',
     'us_pacific' : folder_images,
     'world': folder_images+'world',
+    'it': folder_images+'it',
+    'de': folder_images+'de',
     'nh_shift': folder_images+'nh_shift',
     'mexico': folder_images
 }
