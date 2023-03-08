@@ -52,7 +52,7 @@ def main():
 
 def plot(dset_city):
     city = dset_city.attrs['city']
-    utils.print_message_message('Producing meteogram for %s' % city)
+    utils.print_message('Producing meteogram for %s' % city)
     time, run, cum_hour = utils.get_time_run_cum(dset_city)
     t = dset_city['t']
     t = t.metpy.convert_units('degC').metpy.dequantify()

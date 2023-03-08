@@ -98,14 +98,19 @@ def plot_files(dss, **args):
                                       extend='max', cmap=args['cmap_snow'], norm=args['norm_snow'],
                                       levels=args['levels_snow'], antialiased=True)
 
-        if projection == 'euratl':
+        if projection in ['euratl', 'it', 'de']:
+            if projection == 'euratl':
+                density = 6
+            elif projection in ['it', 'de']:
+                density = 2
             vals = utils.add_vals_on_map(args['ax'],
                                          projection,
                                          data['snow_increment'].where(data['snow_increment'] >= 1),
                                          args['levels_snow'],
                                          cmap=args['cmap_snow'],
                                          norm=args['norm_snow'],
-                                         density=8)
+                                         density=density,
+                                         fontsize=6)
 
         an_fc = utils.annotation_forecast(args['ax'], time)
         an_var = utils.annotation(args['ax'], 'New snow and accumulated rain (since run start)',
@@ -114,9 +119,9 @@ def plot_files(dss, **args):
 
         if first:
             ax_cbar, ax_cbar_2 = utils.divide_axis_for_cbar(args['ax'])
-            cbar_snow = plt.gcf().colorbar(cs_snow, cax=ax_cbar, orientation='horizontal',
+            _ = plt.gcf().colorbar(cs_snow, cax=ax_cbar, orientation='horizontal',
                                            label='Snow')
-            cbar_rain = plt.gcf().colorbar(cs_rain, cax=ax_cbar_2, orientation='horizontal',
+            _ = plt.gcf().colorbar(cs_rain, cax=ax_cbar_2, orientation='horizontal',
                                            label='Rain')
 
         if debug:

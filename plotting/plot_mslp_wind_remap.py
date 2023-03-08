@@ -92,10 +92,16 @@ def plot_files(dss, **args):
         minlabels = utils.plot_maxmin_points(args['ax'], args['x'], args['y'], data['prmsl'],
                                        'min', 180, symbol='L', color='coral', random=True)
 
-        if projection != 'world':
+        if projection == 'nh':
             density = 15
             scale = 5e2
-        else:
+        elif projection == 'euratl':
+            density = 12
+            scale = 5e2
+        elif projection in ['it', 'de']:
+            density = 2
+            scale = 7e2
+        elif projection in ['world','nh_polar','usa']:
             density = 35
             scale = 5e2
 
@@ -104,7 +110,7 @@ def plot_files(dss, **args):
                                data['10u'][::density, ::density],
                                data['10v'][::density, ::density],
                                scale=scale,
-                               alpha=0.5, color='white', headwidth=2)
+                               alpha=0.5, color='white')
 
         an_fc = utils.annotation_forecast(args['ax'], time)
         an_var = utils.annotation(
